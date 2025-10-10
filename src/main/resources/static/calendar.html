@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日历视图 - 工时计算系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .calendar-day {
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+        .calendar-day:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .loading-overlay {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+        }
+        .spinner {
+            border: 3px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-8 fade-in">
+            <h1 class="text-5xl font-bold text-indigo-900 mb-4">
+                📅 考勤日历
+            </h1>
+            <p class="text-gray-600 text-lg mb-6">
+                可视化考勤记录 · 节假日标记 · 请假统计
+            </p>
+            <div class="flex justify-center gap-4">
+                <a href="/" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+                    📊 统计面板
+                </a>
+                <a href="/calendar.html" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                    📅 日历视图
+                </a>
+            </div>
+        </header>
+
+        <!-- Month Selector -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-8 fade-in">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="previousMonth()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors font-semibold">
+                        ← 上月
+                    </button>
+                    <input 
+                        type="month" 
+                        id="calendarMonth" 
+                        class="px-4 py-2 border-2 border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-semibold text-lg"
+                        onchange="loadCalendar()"
+                    >
+                    <button onclick="nextMonth()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors font-semibold">
+                        下月 →
+                    </button>
+                    <button onclick="goToday()" class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors font-semibold">
+                        今天
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2 text-sm">
+                        <div class="w-4 h-4 bg-green-100 border-2 border-green-500 rounded"></div>
+                        <span class="text-gray-700">工作日</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <div class="w-4 h-4 bg-red-100 border-2 border-red-500 rounded"></div>
+                        <span class="text-gray-700">节假日</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <div class="w-4 h-4 bg-yellow-100 border-2 border-yellow-500 rounded"></div>
+                        <span class="text-gray-700">请假</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <div class="w-4 h-4 bg-gray-100 border-2 border-gray-300 rounded"></div>
+                        <span class="text-gray-700">周末</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="hidden fixed inset-0 loading-overlay flex items-center justify-center z-50">
+            <div class="text-center">
+                <div class="spinner mx-auto mb-4"></div>
+                <p class="text-gray-700 font-semibold">加载中...</p>
+            </div>
+        </div>
+
+        <!-- Calendar -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 fade-in">
+            <h2 id="calendarTitle" class="text-2xl font-bold text-gray-800 mb-6 text-center"></h2>
+            
+            <!-- Weekday Headers -->
+            <div class="grid grid-cols-7 gap-2 mb-4">
+                <div class="text-center font-bold text-gray-700 py-2">周一</div>
+                <div class="text-center font-bold text-gray-700 py-2">周二</div>
+                <div class="text-center font-bold text-gray-700 py-2">周三</div>
+                <div class="text-center font-bold text-gray-700 py-2">周四</div>
+                <div class="text-center font-bold text-gray-700 py-2">周五</div>
+                <div class="text-center font-bold text-red-500 py-2">周六</div>
+                <div class="text-center font-bold text-red-500 py-2">周日</div>
+            </div>
+            
+            <!-- Calendar Days -->
+            <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+                <!-- 日历格子将动态生成 -->
+            </div>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div id="summarySection" class="grid md:grid-cols-4 gap-4 mt-8 fade-in">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-sm text-gray-600 mb-1">总工时</div>
+                <div id="summaryTotalHours" class="text-3xl font-bold text-blue-600">0</div>
+                <div class="text-sm text-gray-500">小时</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-sm text-gray-600 mb-1">出勤天数</div>
+                <div id="summaryAttendanceDays" class="text-3xl font-bold text-green-600">0</div>
+                <div class="text-sm text-gray-500">天</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-sm text-gray-600 mb-1">请假时长</div>
+                <div id="summaryLeaveHours" class="text-3xl font-bold text-yellow-600">0</div>
+                <div class="text-sm text-gray-500">小时</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="text-sm text-gray-600 mb-1">平均工时</div>
+                <div id="summaryAvgHours" class="text-3xl font-bold text-purple-600">0</div>
+                <div class="text-sm text-gray-500">小时/天</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-gray-600">
+            <p>工时计算系统 v1.0 | Spring Boot + Apache POI</p>
+        </footer>
+    </div>
+
+    <script>
+        let currentMonth = new Date().toISOString().slice(0, 7);
+        let dailyRecords = [];
+        let statistics = null;
+
+        // 初始化
+        window.addEventListener('load', function() {
+            document.getElementById('calendarMonth').value = currentMonth;
+            loadCalendar();
+        });
+
+        // 加载日历数据
+        async function loadCalendar() {
+            const month = document.getElementById('calendarMonth').value;
+            currentMonth = month;
+            showLoading();
+            
+            try {
+                const response = await fetch(`/api/workhours/calculate?yearMonth=${month}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    statistics = data.statistics;
+                    dailyRecords = data.statistics.dailyRecords || [];
+                    renderCalendar();
+                    updateSummary();
+                } else {
+                    alert('加载失败: ' + data.message);
+                }
+            } catch (error) {
+                alert('请求失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const [year, month] = currentMonth.split('-').map(Number);
+            const firstDay = new Date(year, month - 1, 1);
+            const lastDay = new Date(year, month, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            // 周一为第一天 (1-7, 1=Monday, 7=Sunday)
+            let startDayOfWeek = firstDay.getDay();
+            startDayOfWeek = startDayOfWeek === 0 ? 7 : startDayOfWeek; // 转换周日为7
+            
+            document.getElementById('calendarTitle').textContent = `${year}年${month}月`;
+            
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            // 添加前置空白天
+            for (let i = 1; i < startDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day bg-gray-50 rounded-lg p-3';
+                grid.appendChild(emptyDay);
+            }
+            
+            // 生成每一天
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const record = dailyRecords.find(r => r.date === dateStr);
+                
+                const dayElement = createDayElement(day, dateStr, record);
+                grid.appendChild(dayElement);
+            }
+        }
+
+        // 创建单个日期元素
+        function createDayElement(day, dateStr, record) {
+            const div = document.createElement('div');
+            div.className = 'calendar-day rounded-lg p-3 border-2 cursor-pointer';
+            
+            const today = new Date().toISOString().slice(0, 10);
+            const isToday = dateStr === today;
+            
+            // 确定背景颜色和边框
+            let bgClass = 'bg-white border-gray-200';
+            let dayNumClass = 'text-gray-800';
+            
+            if (record) {
+                if (record.isHoliday) {
+                    bgClass = 'bg-red-50 border-red-500';
+                    dayNumClass = 'text-red-700';
+                } else if (record.isLeave || record.leave) {
+                    bgClass = 'bg-yellow-50 border-yellow-500';
+                    dayNumClass = 'text-yellow-700';
+                } else if (record.isWorkday || record.workday) {
+                    bgClass = 'bg-green-50 border-green-500';
+                    dayNumClass = 'text-green-700';
+                } else {
+                    bgClass = 'bg-gray-100 border-gray-300';
+                    dayNumClass = 'text-gray-500';
+                }
+            } else {
+                // 判断是否周末
+                const date = new Date(dateStr);
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    bgClass = 'bg-gray-100 border-gray-300';
+                    dayNumClass = 'text-gray-500';
+                }
+            }
+            
+            if (isToday) {
+                div.className += ' ring-4 ring-indigo-400';
+            }
+            
+            div.className += ' ' + bgClass;
+            
+            // 日期数字
+            const dayNum = document.createElement('div');
+            dayNum.className = `text-lg font-bold mb-2 ${dayNumClass}`;
+            dayNum.textContent = day;
+            div.appendChild(dayNum);
+            
+            // 显示考勤信息
+            if (record) {
+                // 节假日标记
+                if (record.isHoliday) {
+                    const holidayTag = document.createElement('div');
+                    holidayTag.className = 'text-xs bg-red-500 text-white px-2 py-1 rounded mb-1 font-semibold';
+                    holidayTag.textContent = '🎉 节假日';
+                    div.appendChild(holidayTag);
+                }
+                
+                // 请假标记
+                if (record.isLeave || record.leave) {
+                    const leaveTag = document.createElement('div');
+                    leaveTag.className = 'text-xs bg-yellow-500 text-white px-2 py-1 rounded mb-1 font-semibold';
+                    const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天' :
+                                         record.leaveType === 'MORNING' ? '上午' :
+                                         record.leaveType === 'AFTERNOON' ? '下午' : '';
+                    leaveTag.textContent = `🏖️ 请假${leaveTypeText ? '('+leaveTypeText+')' : ''}`;
+                    div.appendChild(leaveTag);
+                }
+                
+                // 工时信息
+                if (record.startTime || record.endTime) {
+                    const timeDiv = document.createElement('div');
+                    timeDiv.className = 'text-xs text-gray-600 space-y-1';
+                    
+                    if (record.startTime) {
+                        const startSpan = document.createElement('div');
+                        startSpan.className = 'flex items-center gap-1';
+                        startSpan.innerHTML = `<span class="font-semibold">上:</span> ${record.startTime}`;
+                        timeDiv.appendChild(startSpan);
+                    }
+                    
+                    if (record.endTime) {
+                        const endSpan = document.createElement('div');
+                        endSpan.className = 'flex items-center gap-1';
+                        endSpan.innerHTML = `<span class="font-semibold">下:</span> ${record.endTime}`;
+                        timeDiv.appendChild(endSpan);
+                    }
+                    
+                    div.appendChild(timeDiv);
+                }
+                
+                // 工时
+                if (record.workHours > 0) {
+                    const hoursDiv = document.createElement('div');
+                    hoursDiv.className = 'text-xs font-bold text-blue-600 mt-1';
+                    hoursDiv.textContent = `⏱️ ${record.workHours.toFixed(1)}h`;
+                    div.appendChild(hoursDiv);
+                }
+                
+                // 请假时长
+                if (record.leaveHours > 0) {
+                    const leaveHoursDiv = document.createElement('div');
+                    leaveHoursDiv.className = 'text-xs font-bold text-yellow-600 mt-1';
+                    leaveHoursDiv.textContent = `🏖️ ${record.leaveHours.toFixed(1)}h`;
+                    div.appendChild(leaveHoursDiv);
+                }
+            }
+            
+            // 点击事件
+            div.onclick = () => showDayDetails(dateStr, record);
+            
+            return div;
+        }
+
+        // 显示日期详情
+        function showDayDetails(dateStr, record) {
+            if (!record) {
+                alert(`${dateStr}\n暂无考勤记录`);
+                return;
+            }
+            
+            let details = `📅 ${dateStr}\n\n`;
+            
+            if (record.isHoliday) {
+                details += `🎉 法定节假日\n\n`;
+            }
+            
+            if (record.isWorkday || record.workday) {
+                details += `📌 工作日\n`;
+            } else {
+                details += `📌 周末\n`;
+            }
+            
+            if (record.startTime || record.endTime) {
+                details += `\n⏰ 考勤时间：\n`;
+                details += `   上班: ${record.startTime || '未打卡'}\n`;
+                details += `   下班: ${record.endTime || '未打卡'}\n`;
+            }
+            
+            if (record.workHours > 0) {
+                details += `\n⏱️ 工时: ${record.workHours.toFixed(2)} 小时\n`;
+            }
+            
+            if (record.isLeave || record.leave) {
+                details += `\n🏖️ 请假信息：\n`;
+                const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天请假' :
+                                     record.leaveType === 'MORNING' ? '上午请假' :
+                                     record.leaveType === 'AFTERNOON' ? '下午请假' : '请假';
+                details += `   类型: ${leaveTypeText}\n`;
+                details += `   时长: ${record.leaveHours.toFixed(2)} 小时\n`;
+            }
+            
+            if (record.remark) {
+                details += `\n📝 备注: ${record.remark}\n`;
+            }
+            
+            alert(details);
+        }
+
+        // 更新统计摘要
+        function updateSummary() {
+            if (statistics) {
+                document.getElementById('summaryTotalHours').textContent = statistics.totalWorkHours.toFixed(1);
+                document.getElementById('summaryAttendanceDays').textContent = statistics.attendanceDays;
+                document.getElementById('summaryLeaveHours').textContent = statistics.totalLeaveHours.toFixed(1);
+                document.getElementById('summaryAvgHours').textContent = statistics.averageWorkHoursPerDay.toFixed(1);
+            }
+        }
+
+        // 月份导航
+        function previousMonth() {
+            const [year, month] = currentMonth.split('-').map(Number);
+            const newDate = new Date(year, month - 2, 1);
+            currentMonth = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('calendarMonth').value = currentMonth;
+            loadCalendar();
+        }
+
+        function nextMonth() {
+            const [year, month] = currentMonth.split('-').map(Number);
+            const newDate = new Date(year, month, 1);
+            currentMonth = `${newDate.getFullYear()}-${String(newDate.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('calendarMonth').value = currentMonth;
+            loadCalendar();
+        }
+
+        function goToday() {
+            currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('calendarMonth').value = currentMonth;
+            loadCalendar();
+        }
+
+        // 加载和隐藏动画
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

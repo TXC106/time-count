@@ -67,4 +67,9 @@ public class WorkHoursStatistics {
      * 每日记录详情
      */
     private List<DailyRecord> dailyRecords;
+    
+    /**
+     * 请假记录详情（仅包含有请假的记录）
+     */
+    private List<DailyRecord> leaveRecords;
 }

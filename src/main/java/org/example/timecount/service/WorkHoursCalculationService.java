@@ -27,6 +27,7 @@ import java.util.List;
 public class WorkHoursCalculationService {
 
     private final WorkHoursConfig config;
+    private final HolidayService holidayService;
 
     /**
      * 计算指定月份的工时统计
@@ -108,18 +109,25 @@ public class WorkHoursCalculationService {
             // 判断是否为工作日（周一到周五）
             int dayOfWeek = date.getDayOfWeek().getValue();
             boolean isWorkday = dayOfWeek >= 1 && dayOfWeek <= 5;
+            
+            // 判断是否为法定节假日
+            boolean isHoliday = holidayService.isHoliday(date);
+            if (isHoliday) {
+                log.info("检测到法定节假日: {}", date);
+            }
 
             DailyRecord record = DailyRecord.builder()
                     .date(date)
                     .startTime(startTime)
                     .endTime(endTime)
                     .isWorkday(isWorkday)
+                    .isHoliday(isHoliday)
                     .leaveType(leaveType)
                     .remark(remark)
                     .build();
 
-            // 判断是否请假（仅对当前时间之前的工作日）
-            if (isWorkday && !date.isAfter(today)) {
+            // 判断是否请假（仅对当前时间之前的工作日，且不是法定节假日）
+            if (isWorkday && !date.isAfter(today) && !isHoliday) {
                 checkLeaveStatus(record);
             }
 
@@ -234,6 +242,7 @@ public class WorkHoursCalculationService {
         int attendanceDays = 0;
         double totalLeaveHours = 0.0;
         int leaveDays = 0;
+        List<DailyRecord> leaveRecords = new ArrayList<>();
 
         for (DailyRecord record : dailyRecords) {
             if (record.getWorkHours() > 0) {
@@ -243,6 +252,7 @@ public class WorkHoursCalculationService {
             if (record.isLeave()) {
                 totalLeaveHours += record.getLeaveHours();
                 leaveDays++;
+                leaveRecords.add(record);
             }
         }
 
@@ -273,6 +283,7 @@ public class WorkHoursCalculationService {
                 .totalLeaveHours(Math.round(totalLeaveHours * 100.0) / 100.0)
                 .leaveDays(leaveDays)
                 .dailyRecords(dailyRecords)
+                .leaveRecords(leaveRecords)
                 .build();
     }
 

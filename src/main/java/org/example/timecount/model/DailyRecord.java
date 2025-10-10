@@ -60,6 +60,11 @@ public class DailyRecord {
     private String remark;
     
     /**
+     * 是否为法定节假日
+     */
+    private boolean isHoliday;
+    
+    /**
      * 请假类型枚举
      */
     public enum LeaveType {

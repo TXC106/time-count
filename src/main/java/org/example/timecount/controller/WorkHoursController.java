@@ -144,6 +144,35 @@ public class WorkHoursController {
                 report.append("【请假统计】\n");
                 report.append(String.format("  请假天数：%d 天\n", statistics.getLeaveDays()));
                 report.append(String.format("  请假总时长：%.2f 小时\n\n", statistics.getTotalLeaveHours()));
+                
+                // 显示请假详情
+                report.append("  请假明细：\n");
+                if (statistics.getLeaveRecords() != null && !statistics.getLeaveRecords().isEmpty()) {
+                    for (var leaveRecord : statistics.getLeaveRecords()) {
+                        String leaveTypeStr = "";
+                        if (leaveRecord.getLeaveType() != null) {
+                            leaveTypeStr = String.format(" [%s]", leaveRecord.getLeaveType().getDescription());
+                        }
+                        
+                        String timeStr = "";
+                        if (leaveRecord.getStartTime() != null || leaveRecord.getEndTime() != null) {
+                            String start = leaveRecord.getStartTime() != null ? 
+                                    leaveRecord.getStartTime().toString() : "未打卡";
+                            String end = leaveRecord.getEndTime() != null ? 
+                                    leaveRecord.getEndTime().toString() : "未打卡";
+                            timeStr = String.format(" (%s ~ %s)", start, end);
+                        } else {
+                            timeStr = " (全天未打卡)";
+                        }
+                        
+                        report.append(String.format("    - %s%s%s: %.2f 小时\n", 
+                                leaveRecord.getDate(), 
+                                leaveTypeStr,
+                                timeStr,
+                                leaveRecord.getLeaveHours()));
+                    }
+                }
+                report.append("\n");
             }
 
             report.append("=".repeat(60)).append("\n");
