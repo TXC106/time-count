@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工时计算系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-12 fade-in">
+            <h1 class="text-5xl font-bold text-indigo-900 mb-4">
+                📊 工时计算系统
+            </h1>
+            <p class="text-gray-600 text-lg">
+                智能考勤管理 · 自动工时统计 · 数据可视化分析
+            </p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <!-- 功能1: 生成模板 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                        📝
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">生成模板</h2>
+                </div>
+                <p class="text-gray-600 mb-6">
+                    自动生成指定月份的考勤表格模板，包含日期、星期等信息。
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择月份
+                        </label>
+                        <input 
+                            type="month" 
+                            id="templateMonth" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <button 
+                        onclick="generateTemplate()" 
+                        class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    >
+                        <span id="generateBtn">生成模板</span>
+                    </button>
+                </div>
+                
+                <div id="generateResult" class="mt-4"></div>
+            </div>
+
+            <!-- 功能2: 填写说明 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                        ✏️
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">填写数据</h2>
+                </div>
+                <p class="text-gray-600 mb-6">
+                    在生成的Excel文件中填写每天的上下班时间。
+                </p>
+                
+                <div class="bg-blue-50 rounded-lg p-4 space-y-3">
+                    <h3 class="font-semibold text-gray-800 mb-2">📋 操作步骤：</h3>
+                    <ol class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-start">
+                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">1</span>
+                            <span>打开 <code class="bg-gray-200 px-1 rounded">data</code> 目录下的Excel文件</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">2</span>
+                            <span>在"上班时间"和"下班时间"列填写时间</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">3</span>
+                            <span>时间格式：<code class="bg-gray-200 px-1 rounded font-mono">08:56</code></span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">4</span>
+                            <span>保存文件后进行工时计算</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                    <p class="text-sm text-yellow-800">
+                        <strong>💡 提示：</strong>已填写的数据不会被覆盖
+                    </p>
+                </div>
+            </div>
+
+            <!-- 功能3: 计算工时 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                        🔢
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">计算工时</h2>
+                </div>
+                <p class="text-gray-600 mb-6">
+                    自动计算工时统计，包括总工时、平均工时、请假统计等。
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择月份
+                        </label>
+                        <input 
+                            type="month" 
+                            id="calculateMonth" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <button 
+                        onclick="calculateWorkHours()" 
+                        class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    >
+                        <span id="calculateBtn">计算工时</span>
+                    </button>
+                </div>
+                
+                <div id="calculateResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- 统计报告区域 -->
+        <div id="reportSection" class="hidden">
+            <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800">📈 工时统计报告</h2>
+                    <button 
+                        onclick="closeReport()" 
+                        class="text-gray-500 hover:text-gray-700 text-2xl"
+                    >
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="reportContent" class="space-y-6">
+                    <!-- 报告内容将动态插入 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 计算规则说明 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mt-8 fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <span class="text-3xl mr-3">ℹ️</span>
+                工时计算规则
+            </h2>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="font-semibold text-lg text-gray-800 mb-3">📌 基本规则</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">•</span>
+                            <span>工时 = 下班时间 - 上班时间 - 午休 - 晚餐</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">•</span>
+                            <span>所有情况扣除 <strong>1小时</strong> 午休时间</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">•</span>
+                            <span>下班晚于19:00扣除 <strong>0.5小时</strong> 晚餐时间</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-lg text-gray-800 mb-3">🏖️ 请假判定</h3>
+                    <ul class="space-y-2 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-2">•</span>
+                            <span>上下班时间为空（缺勤）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-2">•</span>
+                            <span>上班时间晚于 <strong>09:00</strong>（迟到）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-2">•</span>
+                            <span>下班时间早于 <strong>18:00</strong>（早退）</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-gray-600">
+            <p>工时计算系统 v1.0 | Spring Boot + Apache POI</p>
+        </footer>
+    </div>
+
+    <script>
+        // 设置当前月份为默认值
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        document.getElementById('templateMonth').value = currentMonth;
+        document.getElementById('calculateMonth').value = currentMonth;
+
+        // 生成模板
+        async function generateTemplate() {
+            const month = document.getElementById('templateMonth').value;
+            const resultDiv = document.getElementById('generateResult');
+            const btn = document.getElementById('generateBtn');
+            
+            if (!month) {
+                showMessage(resultDiv, '请选择月份', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch(`/api/workhours/template/generate?yearMonth=${month}`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(resultDiv, `✅ 模板生成成功！<br><small class="text-xs">文件路径: ${data.filePath}</small>`, 'success');
+                } else {
+                    showMessage(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, `❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                btn.textContent = '生成模板';
+            }
+        }
+
+        // 计算工时
+        async function calculateWorkHours() {
+            const month = document.getElementById('calculateMonth').value;
+            const resultDiv = document.getElementById('calculateResult');
+            const btn = document.getElementById('calculateBtn');
+            
+            if (!month) {
+                showMessage(resultDiv, '请选择月份', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch(`/api/workhours/calculate?yearMonth=${month}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(resultDiv, '✅ 计算完成！', 'success');
+                    displayReport(data.statistics);
+                } else {
+                    showMessage(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, `❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                btn.textContent = '计算工时';
+            }
+        }
+
+        // 显示报告
+        function displayReport(stats) {
+            const reportSection = document.getElementById('reportSection');
+            const reportContent = document.getElementById('reportContent');
+            
+            const html = `
+                <div class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl p-6 mb-6">
+                    <h3 class="text-2xl font-bold mb-2">${stats.yearMonth}</h3>
+                    <p class="text-blue-100">工时统计月度报告</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">当月总工时</div>
+                        <div class="text-3xl font-bold text-blue-600">${stats.totalWorkHours}</div>
+                        <div class="text-sm text-gray-500">小时</div>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">出勤天数</div>
+                        <div class="text-3xl font-bold text-green-600">${stats.attendanceDays}</div>
+                        <div class="text-sm text-gray-500">天</div>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-600 mb-1">日平均工时</div>
+                        <div class="text-3xl font-bold text-purple-600">${stats.averageWorkHoursPerDay}</div>
+                        <div class="text-sm text-gray-500">小时/天</div>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6">
+                    <h4 class="font-bold text-lg mb-4">🎯 期望目标</h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex justify-between items-center bg-gray-50 rounded-lg p-4">
+                            <span class="text-gray-700">期望总工时</span>
+                            <span class="font-bold text-xl">${stats.expectedTotalHours} 小时</span>
+                        </div>
+                        <div class="flex justify-between items-center ${stats.remainingHoursToTarget > 0 ? 'bg-orange-50' : 'bg-green-50'} rounded-lg p-4">
+                            <span class="text-gray-700">距离目标</span>
+                            <span class="font-bold text-xl ${stats.remainingHoursToTarget > 0 ? 'text-orange-600' : 'text-green-600'}">
+                                ${stats.remainingHoursToTarget > 0 ? '+' : ''}${stats.remainingHoursToTarget} 小时
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6 mt-6">
+                    <h4 class="font-bold text-lg mb-4">📅 剩余规划</h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex justify-between items-center bg-gray-50 rounded-lg p-4">
+                            <span class="text-gray-700">剩余工作日</span>
+                            <span class="font-bold text-xl">${stats.remainingWorkdays} 天</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-indigo-50 rounded-lg p-4">
+                            <span class="text-gray-700">需要日均工时</span>
+                            <span class="font-bold text-xl text-indigo-600">${stats.requiredAverageHoursForRemainingDays} 小时/天</span>
+                        </div>
+                    </div>
+                </div>
+
+                ${stats.leaveDays > 0 ? `
+                <div class="border-t pt-6 mt-6">
+                    <h4 class="font-bold text-lg mb-4">🏖️ 请假统计</h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="flex justify-between items-center bg-yellow-50 rounded-lg p-4">
+                            <span class="text-gray-700">请假天数</span>
+                            <span class="font-bold text-xl text-yellow-600">${stats.leaveDays} 天</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-yellow-50 rounded-lg p-4">
+                            <span class="text-gray-700">请假总时长</span>
+                            <span class="font-bold text-xl text-yellow-600">${stats.totalLeaveHours} 小时</span>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            reportContent.innerHTML = html;
+            reportSection.classList.remove('hidden');
+            reportSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 关闭报告
+        function closeReport() {
+            document.getElementById('reportSection').classList.add('hidden');
+        }
+
+        // 显示消息
+        function showMessage(element, message, type) {
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800';
+            element.innerHTML = `
+                <div class="${bgColor} border-l-4 p-3 rounded text-sm">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                if (type === 'success') {
+                    element.innerHTML = '';
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
