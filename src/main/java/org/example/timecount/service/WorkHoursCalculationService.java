@@ -243,6 +243,8 @@ public class WorkHoursCalculationService {
         double totalLeaveHours = 0.0;
         int leaveDays = 0;
         List<DailyRecord> leaveRecords = new ArrayList<>();
+        int lateNightCheckInCount = 0;
+        int actualAttendanceDays = 0;
 
         for (DailyRecord record : dailyRecords) {
             if (record.getWorkHours() > 0) {
@@ -253,6 +255,16 @@ public class WorkHoursCalculationService {
                 totalLeaveHours += record.getLeaveHours();
                 leaveDays++;
                 leaveRecords.add(record);
+            }
+            
+            // 统计晚上九点后打卡次数
+            if (record.getEndTime() != null && record.getEndTime().isAfter(LocalTime.of(21, 0))) {
+                lateNightCheckInCount++;
+            }
+            
+            // 统计实际出勤天数（工作日且有上班或下班打卡记录）
+            if (record.isWorkday() && (record.getStartTime() != null || record.getEndTime() != null)) {
+                actualAttendanceDays++;
             }
         }
 
@@ -284,6 +296,8 @@ public class WorkHoursCalculationService {
                 .leaveDays(leaveDays)
                 .dailyRecords(dailyRecords)
                 .leaveRecords(leaveRecords)
+                .lateNightCheckInCount(lateNightCheckInCount)
+                .actualAttendanceDays(actualAttendanceDays)
                 .build();
     }
 

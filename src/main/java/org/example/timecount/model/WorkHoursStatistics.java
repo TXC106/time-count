@@ -72,4 +72,14 @@ public class WorkHoursStatistics {
      * 请假记录详情（仅包含有请假的记录）
      */
     private List<DailyRecord> leaveRecords;
+    
+    /**
+     * 晚上九点后打卡次数
+     */
+    private int lateNightCheckInCount;
+    
+    /**
+     * 实际出勤天数（有打卡记录的工作日天数）
+     */
+    private int actualAttendanceDays;
 }

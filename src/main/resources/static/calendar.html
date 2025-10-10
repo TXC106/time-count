@@ -130,16 +130,35 @@
         </div>
 
         <!-- Statistics Summary -->
-        <div id="summarySection" class="grid md:grid-cols-4 gap-4 mt-8 fade-in">
+        <div id="summarySection" class="grid md:grid-cols-5 gap-4 mt-8 fade-in">
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="text-sm text-gray-600 mb-1">总工时</div>
                 <div id="summaryTotalHours" class="text-3xl font-bold text-blue-600">0</div>
                 <div class="text-sm text-gray-500">小时</div>
             </div>
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="text-sm text-gray-600 mb-1">出勤天数</div>
-                <div id="summaryAttendanceDays" class="text-3xl font-bold text-green-600">0</div>
+            <div class="bg-white rounded-xl shadow-lg p-6 relative group">
+                <div class="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                    出勤天数
+                    <span class="text-xs text-green-500 cursor-help">ℹ️</span>
+                </div>
+                <div id="summaryActualDays" class="text-3xl font-bold text-green-600">0</div>
                 <div class="text-sm text-gray-500">天</div>
+                <div class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap z-10">
+                    推荐: 21天 | 有工时: <span id="summaryAttendanceDays">0</span>天
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 relative group">
+                <div class="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                    21点后打卡
+                    <span class="text-xs text-orange-500 cursor-help">ℹ️</span>
+                </div>
+                <div id="summaryLateNightCount" class="text-3xl font-bold text-orange-600">0</div>
+                <div class="text-sm text-gray-500">次</div>
+                <div class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap z-10">
+                    推荐次数: 13次
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
             </div>
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <div class="text-sm text-gray-600 mb-1">请假时长</div>
@@ -391,9 +410,24 @@
         function updateSummary() {
             if (statistics) {
                 document.getElementById('summaryTotalHours').textContent = statistics.totalWorkHours.toFixed(1);
-                document.getElementById('summaryAttendanceDays').textContent = statistics.attendanceDays;
                 document.getElementById('summaryLeaveHours').textContent = statistics.totalLeaveHours.toFixed(1);
                 document.getElementById('summaryAvgHours').textContent = statistics.averageWorkHoursPerDay.toFixed(1);
+                
+                // 更新新增的统计数据
+                const lateNightCount = statistics.lateNightCheckInCount || 0;
+                const actualDays = statistics.actualAttendanceDays || 0;
+                const attendanceDays = statistics.attendanceDays || 0;
+                
+                document.getElementById('summaryLateNightCount').textContent = lateNightCount;
+                document.getElementById('summaryActualDays').textContent = actualDays;
+                document.getElementById('summaryAttendanceDays').textContent = attendanceDays;
+                
+                // 根据是否达到推荐次数改变颜色
+                const lateNightEl = document.getElementById('summaryLateNightCount');
+                lateNightEl.className = lateNightCount >= 13 ? 'text-3xl font-bold text-green-600' : 'text-3xl font-bold text-orange-600';
+                
+                const actualDaysEl = document.getElementById('summaryActualDays');
+                actualDaysEl.className = actualDays >= 21 ? 'text-3xl font-bold text-green-600' : 'text-3xl font-bold text-green-600';
             }
         }
 

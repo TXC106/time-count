@@ -565,16 +565,35 @@
                     <p class="text-blue-100">工时统计月度报告</p>
                 </div>
 
-                <div class="grid md:grid-cols-3 gap-4 mb-6">
+                <div class="grid md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-blue-50 rounded-lg p-4">
                         <div class="text-sm text-gray-600 mb-1">当月总工时</div>
                         <div class="text-3xl font-bold text-blue-600">${stats.totalWorkHours}</div>
                         <div class="text-sm text-gray-500">小时</div>
                     </div>
-                    <div class="bg-green-50 rounded-lg p-4">
-                        <div class="text-sm text-gray-600 mb-1">出勤天数</div>
-                        <div class="text-3xl font-bold text-green-600">${stats.attendanceDays}</div>
+                    <div class="bg-green-50 rounded-lg p-4 relative group">
+                        <div class="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                            出勤天数
+                            <span class="text-xs text-green-500 cursor-help">ℹ️</span>
+                        </div>
+                        <div class="text-3xl font-bold ${stats.actualAttendanceDays >= 21 ? 'text-green-600' : 'text-green-600'}">${stats.actualAttendanceDays}</div>
                         <div class="text-sm text-gray-500">天</div>
+                        <div class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap z-10">
+                            推荐: 21天 | 有工时: ${stats.attendanceDays}天
+                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-4 relative group">
+                        <div class="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                            21点后打卡
+                            <span class="text-xs text-orange-500 cursor-help">ℹ️</span>
+                        </div>
+                        <div class="text-3xl font-bold ${stats.lateNightCheckInCount >= 13 ? 'text-green-600' : 'text-orange-600'}">${stats.lateNightCheckInCount}</div>
+                        <div class="text-sm text-gray-500">次</div>
+                        <div class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap z-10">
+                            推荐次数: 13次
+                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                        </div>
                     </div>
                     <div class="bg-purple-50 rounded-lg p-4">
                         <div class="text-sm text-gray-600 mb-1">日平均工时</div>
