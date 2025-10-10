@@ -48,4 +48,34 @@ public class DailyRecord {
      * 请假时长（小时）
      */
     private double leaveHours;
+    
+    /**
+     * 请假类型：MORNING(上午)、AFTERNOON(下午)、FULL_DAY(全天)、NONE(无)
+     */
+    private LeaveType leaveType;
+    
+    /**
+     * 备注
+     */
+    private String remark;
+    
+    /**
+     * 请假类型枚举
+     */
+    public enum LeaveType {
+        NONE("无"),
+        MORNING("上午"),
+        AFTERNOON("下午"),
+        FULL_DAY("全天");
+        
+        private final String description;
+        
+        LeaveType(String description) {
+            this.description = description;
+        }
+        
+        public String getDescription() {
+            return description;
+        }
+    }
 }

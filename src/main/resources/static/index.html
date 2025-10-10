@@ -40,8 +40,215 @@
         </header>
 
         <!-- Main Content -->
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+            <!-- 功能1: 打卡功能 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                        ✓
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">打卡考勤</h2>
+                </div>
+                <p class="text-gray-600 mb-6">
+                    记录每天的上下班时间，支持请假设置。
+                </p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择日期
+                        </label>
+                        <input 
+                            type="date" 
+                            id="attendanceDate" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                上班时间
+                            </label>
+                            <input 
+                                type="time" 
+                                id="attendanceStartTime" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                下班时间
+                            </label>
+                            <input 
+                                type="time" 
+                                id="attendanceEndTime" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            >
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            请假类型
+                        </label>
+                        <select 
+                            id="leaveType" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                            <option value="NONE">正常出勤</option>
+                            <option value="MORNING">上午请假</option>
+                            <option value="AFTERNOON">下午请假</option>
+                            <option value="FULL_DAY">全天请假</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            备注
+                        </label>
+                        <input 
+                            type="text" 
+                            id="attendanceRemark" 
+                            placeholder="可选"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                    </div>
+                    
+                    <button 
+                        onclick="submitAttendance()" 
+                        class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    >
+                        <span id="attendanceBtn">提交打卡</span>
+                    </button>
+                </div>
+                
+                <div id="attendanceResult" class="mt-4"></div>
+                
+                <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-sm">
+                    <p class="text-blue-800">
+                        <strong>💡 提示：</strong>下午请假不会扣除午休时间
+                    </p>
+                </div>
+            </div>
+
+            <!-- 功能2: 配置管理 -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                        ⚙️
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">配置管理</h2>
+                </div>
+                <p class="text-gray-600 mb-6">
+                    自定义工时计算规则和期望总工时。
+                </p>
+                
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">期望总工时</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configExpectedHours" 
+                                step="0.5"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">小时</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">午休时间</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configLunchBreak" 
+                                step="0.5"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">小时</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">晚餐时间</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configDinnerBreak" 
+                                step="0.5"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">小时</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">晚餐临界点</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configDinnerThreshold" 
+                                min="0"
+                                max="23"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">点</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">标准上班</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configStandardStart" 
+                                min="0"
+                                max="23"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">点</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700">标准下班</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configStandardEnd" 
+                                min="0"
+                                max="23"
+                                class="w-20 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500"
+                            >
+                            <span class="ml-2 text-gray-600">点</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 space-y-2">
+                    <button 
+                        onclick="loadConfig()" 
+                        class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
+                    >
+                        加载当前配置
+                    </button>
+                    <button 
+                        onclick="saveConfig()" 
+                        class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
+                    >
+                        <span id="configBtn">保存配置</span>
+                    </button>
+                </div>
+                
+                <div id="configResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- 原有功能区 -->
         <div class="grid md:grid-cols-3 gap-6 mb-8">
-            <!-- 功能1: 生成模板 -->
+            <!-- 功能3: 生成模板 -->
             <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
                 <div class="flex items-center mb-4">
                     <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
@@ -76,48 +283,58 @@
                 <div id="generateResult" class="mt-4"></div>
             </div>
 
-            <!-- 功能2: 填写说明 -->
+            <!-- 功能4: 填写说明 -->
             <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
                 <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+                    <div class="w-12 h-12 bg-cyan-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
                         ✏️
                     </div>
-                    <h2 class="text-2xl font-bold text-gray-800">填写数据</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">填写说明</h2>
                 </div>
                 <p class="text-gray-600 mb-6">
-                    在生成的Excel文件中填写每天的上下班时间。
+                    打卡方式与Excel手动填写说明。
                 </p>
                 
                 <div class="bg-blue-50 rounded-lg p-4 space-y-3">
-                    <h3 class="font-semibold text-gray-800 mb-2">📋 操作步骤：</h3>
+                    <h3 class="font-semibold text-gray-800 mb-2">📋 打卡方式：</h3>
                     <ol class="space-y-2 text-sm text-gray-700">
                         <li class="flex items-start">
                             <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">1</span>
-                            <span>打开 <code class="bg-gray-200 px-1 rounded">data</code> 目录下的Excel文件</span>
+                            <span>使用上方"打卡考勤"功能在线提交</span>
                         </li>
                         <li class="flex items-start">
                             <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">2</span>
-                            <span>在"上班时间"和"下班时间"列填写时间</span>
+                            <span>或手动在Excel文件中填写时间</span>
+                        </li>
+                    </ol>
+                </div>
+                
+                <div class="bg-green-50 rounded-lg p-4 space-y-3 mt-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">📝 Excel手动填写：</h3>
+                    <ol class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-start">
+                            <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">1</span>
+                            <span>打开 <code class="bg-gray-200 px-1 rounded">data</code> 目录下的Excel文件</span>
                         </li>
                         <li class="flex items-start">
-                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">3</span>
-                            <span>时间格式：<code class="bg-gray-200 px-1 rounded font-mono">08:56</code></span>
+                            <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">2</span>
+                            <span>填写"上班时间"和"下班时间"列</span>
                         </li>
                         <li class="flex items-start">
-                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">4</span>
-                            <span>保存文件后进行工时计算</span>
+                            <span class="bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">3</span>
+                            <span>格式：<code class="bg-gray-200 px-1 rounded font-mono">8:56</code></span>
                         </li>
                     </ol>
                 </div>
 
                 <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
                     <p class="text-sm text-yellow-800">
-                        <strong>💡 提示：</strong>已填写的数据不会被覆盖
+                        <strong>💡 提示：</strong>推荐使用在线打卡，数据自动同步
                     </p>
                 </div>
             </div>
 
-            <!-- 功能3: 计算工时 -->
+            <!-- 功能5: 计算工时 -->
             <div class="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 fade-in">
                 <div class="flex items-center mb-4">
                     <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white text-2xl mr-4">
@@ -179,39 +396,69 @@
                 工时计算规则
             </h2>
             
-            <div class="grid md:grid-cols-2 gap-6">
+            <div class="grid md:grid-cols-3 gap-6">
                 <div>
                     <h3 class="font-semibold text-lg text-gray-800 mb-3">📌 基本规则</h3>
-                    <ul class="space-y-2 text-gray-700">
+                    <ul class="space-y-2 text-gray-700 text-sm">
                         <li class="flex items-start">
                             <span class="text-blue-500 mr-2">•</span>
-                            <span>工时 = 下班时间 - 上班时间 - 午休 - 晚餐</span>
+                            <span>工时 = 下班 - 上班 - 午休 - 晚餐</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-blue-500 mr-2">•</span>
-                            <span>所有情况扣除 <strong>1小时</strong> 午休时间</span>
+                            <span>正常情况扣除午休时间（默认1小时）</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-blue-500 mr-2">•</span>
-                            <span>下班晚于19:00扣除 <strong>0.5小时</strong> 晚餐时间</span>
+                            <span>下班晚于临界点扣除晚餐时间（默认19点后扣0.5小时）</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-blue-500 mr-2">•</span>
+                            <span>所有时间参数可在配置管理中自定义</span>
                         </li>
                     </ul>
                 </div>
                 
                 <div>
-                    <h3 class="font-semibold text-lg text-gray-800 mb-3">🏖️ 请假判定</h3>
-                    <ul class="space-y-2 text-gray-700">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-3">🏖️ 请假规则</h3>
+                    <ul class="space-y-2 text-gray-700 text-sm">
                         <li class="flex items-start">
                             <span class="text-orange-500 mr-2">•</span>
-                            <span>上下班时间为空（缺勤）</span>
+                            <span><strong>全天请假：</strong>不填上下班时间</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-orange-500 mr-2">•</span>
-                            <span>上班时间晚于 <strong>09:00</strong>（迟到）</span>
+                            <span><strong>上午请假：</strong>只填下班时间</span>
                         </li>
                         <li class="flex items-start">
                             <span class="text-orange-500 mr-2">•</span>
-                            <span>下班时间早于 <strong>18:00</strong>（早退）</span>
+                            <span><strong>下午请假：</strong>只填上班时间，<em>不扣午休</em></span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-orange-500 mr-2">•</span>
+                            <span>上班晚于标准时间（默认9点）或下班早于标准时间（默认18点）视为请假</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="font-semibold text-lg text-gray-800 mb-3">⚙️ 自定义配置</h3>
+                    <ul class="space-y-2 text-gray-700 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">•</span>
+                            <span><strong>期望总工时：</strong>用于计算目标差距</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">•</span>
+                            <span><strong>午休时间：</strong>每天扣除的午休时长</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">•</span>
+                            <span><strong>晚餐时间：</strong>加班时扣除的晚餐时长</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-500 mr-2">•</span>
+                            <span><strong>标准工时：</strong>用于判定迟到早退</span>
                         </li>
                     </ul>
                 </div>
@@ -225,10 +472,17 @@
     </div>
 
     <script>
-        // 设置当前月份为默认值
+        // 设置当前月份和日期为默认值
         const currentMonth = new Date().toISOString().slice(0, 7);
+        const currentDate = new Date().toISOString().slice(0, 10);
         document.getElementById('templateMonth').value = currentMonth;
         document.getElementById('calculateMonth').value = currentMonth;
+        document.getElementById('attendanceDate').value = currentDate;
+        
+        // 页面加载时自动加载配置
+        window.addEventListener('load', function() {
+            loadConfig();
+        });
 
         // 生成模板
         async function generateTemplate() {
@@ -391,6 +645,132 @@
                     element.innerHTML = '';
                 }
             }, 5000);
+        }
+
+        // 提交考勤打卡
+        async function submitAttendance() {
+            const date = document.getElementById('attendanceDate').value;
+            const startTime = document.getElementById('attendanceStartTime').value;
+            const endTime = document.getElementById('attendanceEndTime').value;
+            const leaveType = document.getElementById('leaveType').value;
+            const remark = document.getElementById('attendanceRemark').value;
+            const resultDiv = document.getElementById('attendanceResult');
+            const btn = document.getElementById('attendanceBtn');
+            
+            if (!date) {
+                showMessage(resultDiv, '请选择日期', 'error');
+                return;
+            }
+
+            // 如果不是全天请假，至少需要填写一个时间
+            if (leaveType !== 'FULL_DAY' && !startTime && !endTime) {
+                showMessage(resultDiv, '请至少填写上班或下班时间', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const requestBody = {
+                    date: date,
+                    startTime: startTime || null,
+                    endTime: endTime || null,
+                    leaveType: leaveType,
+                    remark: remark || null
+                };
+
+                const response = await fetch('/api/workhours/attendance/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(resultDiv, '✅ 打卡成功！数据已同步到Excel文件', 'success');
+                    // 清空表单
+                    document.getElementById('attendanceStartTime').value = '';
+                    document.getElementById('attendanceEndTime').value = '';
+                    document.getElementById('leaveType').value = 'NONE';
+                    document.getElementById('attendanceRemark').value = '';
+                } else {
+                    showMessage(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, `❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                btn.textContent = '提交打卡';
+            }
+        }
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/workhours/config');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const config = data.config;
+                    document.getElementById('configExpectedHours').value = config.expectedTotalHours;
+                    document.getElementById('configLunchBreak').value = config.lunchBreakHours;
+                    document.getElementById('configDinnerBreak').value = config.dinnerBreakHours;
+                    document.getElementById('configDinnerThreshold').value = config.dinnerBreakThresholdHour;
+                    document.getElementById('configStandardStart').value = config.standardStartHour;
+                    document.getElementById('configStandardEnd').value = config.standardEndHour;
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+            }
+        }
+
+        // 保存配置
+        async function saveConfig() {
+            const resultDiv = document.getElementById('configResult');
+            const btn = document.getElementById('configBtn');
+            
+            const configData = {
+                expectedTotalHours: parseFloat(document.getElementById('configExpectedHours').value),
+                lunchBreakHours: parseFloat(document.getElementById('configLunchBreak').value),
+                dinnerBreakHours: parseFloat(document.getElementById('configDinnerBreak').value),
+                dinnerBreakThresholdHour: parseInt(document.getElementById('configDinnerThreshold').value),
+                standardStartHour: parseInt(document.getElementById('configStandardStart').value),
+                standardEndHour: parseInt(document.getElementById('configStandardEnd').value)
+            };
+
+            // 验证数据
+            if (isNaN(configData.expectedTotalHours) || isNaN(configData.lunchBreakHours) || 
+                isNaN(configData.dinnerBreakHours) || isNaN(configData.dinnerBreakThresholdHour) ||
+                isNaN(configData.standardStartHour) || isNaN(configData.standardEndHour)) {
+                showMessage(resultDiv, '请填写所有配置项', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch('/api/workhours/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(resultDiv, '✅ 配置保存成功！', 'success');
+                } else {
+                    showMessage(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, `❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                btn.textContent = '保存配置';
+            }
         }
     </script>
 </body>

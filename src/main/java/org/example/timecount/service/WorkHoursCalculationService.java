@@ -92,9 +92,18 @@ public class WorkHoursCalculationService {
             LocalTime startTime = parseTime(startTimeStr);
             LocalTime endTime = parseTime(endTimeStr);
             
+            // 读取请假类型（第5列）
+            Cell leaveTypeCell = row.getCell(4);
+            String leaveTypeStr = getCellValueAsString(leaveTypeCell);
+            DailyRecord.LeaveType leaveType = parseLeaveType(leaveTypeStr);
+            
+            // 读取备注（第6列）
+            Cell remarkCell = row.getCell(5);
+            String remark = getCellValueAsString(remarkCell);
+            
             // 添加调试日志
-            log.debug("解析日期 {} - 上班时间: {} -> {}, 下班时间: {} -> {}", 
-                    dateStr, startTimeStr, startTime, endTimeStr, endTime);
+            log.debug("解析日期 {} - 上班时间: {} -> {}, 下班时间: {} -> {}, 请假类型: {}", 
+                    dateStr, startTimeStr, startTime, endTimeStr, endTime, leaveType);
 
             // 判断是否为工作日（周一到周五）
             int dayOfWeek = date.getDayOfWeek().getValue();
@@ -105,6 +114,8 @@ public class WorkHoursCalculationService {
                     .startTime(startTime)
                     .endTime(endTime)
                     .isWorkday(isWorkday)
+                    .leaveType(leaveType)
+                    .remark(remark)
                     .build();
 
             // 判断是否请假（仅对当前时间之前的工作日）
@@ -114,7 +125,7 @@ public class WorkHoursCalculationService {
 
             // 计算工时
             if (startTime != null && endTime != null) {
-                double workHours = calculateDailyWorkHours(startTime, endTime);
+                double workHours = calculateDailyWorkHours(startTime, endTime, leaveType);
                 record.setWorkHours(workHours);
                 log.debug("日期 {} 计算工时: {} 小时", dateStr, workHours);
             } else {
@@ -169,7 +180,7 @@ public class WorkHoursCalculationService {
                 }
             } else {
                 // 迟到或早退
-                double actualHours = calculateDailyWorkHours(startTime, endTime);
+                double actualHours = calculateDailyWorkHours(startTime, endTime, record.getLeaveType() != null ? record.getLeaveType() : DailyRecord.LeaveType.NONE);
                 double standardHours = 8.0; // 标准工时
                 leaveHours = Math.max(0, standardHours - actualHours);
             }
@@ -181,7 +192,7 @@ public class WorkHoursCalculationService {
     /**
      * 计算每日工时
      */
-    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime) {
+    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, DailyRecord.LeaveType leaveType) {
         if (startTime == null || endTime == null) {
             return 0.0;
         }
@@ -192,9 +203,14 @@ public class WorkHoursCalculationService {
         
         log.debug("  原始时长: {} - {} = {} 小时", endTime, startTime, String.format("%.2f", totalHours));
 
-        // 扣除午休时间
-        totalHours -= config.getLunchBreakHours();
-        log.debug("  扣除午休 {} 小时后: {} 小时", config.getLunchBreakHours(), String.format("%.2f", totalHours));
+        // 判断是否需要扣除午休时间
+        // 如果是下午请假，则不扣除午休时间
+        if (leaveType != DailyRecord.LeaveType.AFTERNOON) {
+            totalHours -= config.getLunchBreakHours();
+            log.debug("  扣除午休 {} 小时后: {} 小时", config.getLunchBreakHours(), String.format("%.2f", totalHours));
+        } else {
+            log.debug("  下午请假，不扣除午休时间");
+        }
 
         // 如果下班时间晚于19:00，扣除晚餐时间
         LocalTime dinnerThreshold = LocalTime.of(config.getDinnerBreakThresholdHour(), 0);
@@ -279,6 +295,26 @@ public class WorkHoursCalculationService {
         return count;
     }
 
+    /**
+     * 解析请假类型
+     */
+    private DailyRecord.LeaveType parseLeaveType(String typeStr) {
+        if (typeStr == null || typeStr.trim().isEmpty()) {
+            return DailyRecord.LeaveType.NONE;
+        }
+        
+        String type = typeStr.trim();
+        if (type.contains("上午")) {
+            return DailyRecord.LeaveType.MORNING;
+        } else if (type.contains("下午")) {
+            return DailyRecord.LeaveType.AFTERNOON;
+        } else if (type.contains("全天")) {
+            return DailyRecord.LeaveType.FULL_DAY;
+        }
+        
+        return DailyRecord.LeaveType.NONE;
+    }
+    
     /**
      * 解析时间字符串
      */

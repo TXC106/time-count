@@ -2,7 +2,11 @@ package org.example.timecount.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.timecount.config.WorkHoursConfig;
+import org.example.timecount.model.AttendanceRequest;
+import org.example.timecount.model.WorkHoursConfigRequest;
 import org.example.timecount.model.WorkHoursStatistics;
+import org.example.timecount.service.AttendanceService;
 import org.example.timecount.service.ExcelTemplateService;
 import org.example.timecount.service.WorkHoursCalculationService;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,8 @@ public class WorkHoursController {
 
     private final ExcelTemplateService templateService;
     private final WorkHoursCalculationService calculationService;
+    private final AttendanceService attendanceService;
+    private final WorkHoursConfig workHoursConfig;
 
     /**
      * 生成指定月份的考勤表格模板
@@ -193,6 +199,104 @@ public class WorkHoursController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "获取每日记录失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 提交考勤记录（打卡）
+     */
+    @PostMapping("/attendance/submit")
+    public ResponseEntity<Map<String, Object>> submitAttendance(
+            @RequestBody AttendanceRequest request) {
+        
+        try {
+            attendanceService.submitAttendance(request);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "考勤记录提交成功");
+
+            log.info("考勤记录提交成功: {}", request.getDate());
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("提交考勤记录失败", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "提交考勤记录失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 获取工时配置
+     */
+    @GetMapping("/config")
+    public ResponseEntity<Map<String, Object>> getConfig() {
+        try {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("config", Map.of(
+                "expectedTotalHours", workHoursConfig.getExpectedTotalHours(),
+                "lunchBreakHours", workHoursConfig.getLunchBreakHours(),
+                "dinnerBreakHours", workHoursConfig.getDinnerBreakHours(),
+                "dinnerBreakThresholdHour", workHoursConfig.getDinnerBreakThresholdHour(),
+                "standardStartHour", workHoursConfig.getStandardStartHour(),
+                "standardEndHour", workHoursConfig.getStandardEndHour()
+            ));
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("获取配置失败", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取配置失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 更新工时配置
+     */
+    @PutMapping("/config")
+    public ResponseEntity<Map<String, Object>> updateConfig(
+            @RequestBody WorkHoursConfigRequest request) {
+        
+        try {
+            // 更新配置
+            if (request.getExpectedTotalHours() != null) {
+                workHoursConfig.setExpectedTotalHours(request.getExpectedTotalHours());
+            }
+            if (request.getLunchBreakHours() != null) {
+                workHoursConfig.setLunchBreakHours(request.getLunchBreakHours());
+            }
+            if (request.getDinnerBreakHours() != null) {
+                workHoursConfig.setDinnerBreakHours(request.getDinnerBreakHours());
+            }
+            if (request.getDinnerBreakThresholdHour() != null) {
+                workHoursConfig.setDinnerBreakThresholdHour(request.getDinnerBreakThresholdHour());
+            }
+            if (request.getStandardStartHour() != null) {
+                workHoursConfig.setStandardStartHour(request.getStandardStartHour());
+            }
+            if (request.getStandardEndHour() != null) {
+                workHoursConfig.setStandardEndHour(request.getStandardEndHour());
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "配置更新成功");
+
+            log.info("工时配置更新成功");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("更新配置失败", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "更新配置失败: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }
