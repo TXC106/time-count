@@ -15,6 +15,11 @@ public class WorkHoursConfig {
     private String dataDirectory = "data";
     
     /**
+     * 文件名格式（使用 {yearMonth} 作为占位符，例如：attendance_{yearMonth}.xlsx）
+     */
+    private String fileNameFormat = "attendance_{yearMonth}.xlsx";
+    
+    /**
      * 期望总工时（默认220小时）
      */
     private double expectedTotalHours = 220.0;

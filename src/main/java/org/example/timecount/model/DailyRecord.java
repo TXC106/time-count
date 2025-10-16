@@ -20,6 +20,11 @@ public class DailyRecord {
     private LocalDate date;
     
     /**
+     * 星期
+     */
+    private String dayOfWeek;
+    
+    /**
      * 上班时间
      */
     private LocalTime startTime;

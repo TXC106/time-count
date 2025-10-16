@@ -66,27 +66,27 @@
                 <p class="text-gray-600 mb-6">
                     自动生成指定月份的考勤表格模板，包含日期、星期等信息。
                 </p>
-                
+
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             选择月份
                         </label>
-                        <input 
-                            type="month" 
-                            id="templateMonth" 
+                        <input
+                            type="month"
+                            id="templateMonth"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                     </div>
-                    
-                    <button 
-                        onclick="generateTemplate()" 
+
+                    <button
+                        onclick="generateTemplate()"
                         class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
                     >
                         <span id="generateBtn">生成模板</span>
                     </button>
                 </div>
-                
+
                 <div id="generateResult" class="mt-4"></div>
             </div>
 
@@ -97,25 +97,38 @@
                         ✏️
                     </div>
                     <h2 class="text-2xl font-bold text-gray-800">填写说明</h2>
-                </div>
+                </配置管理中文件存储设置修改可以从当前设备选择存储位置，文件名格式也添加几个参考选项div>
                 <p class="text-gray-600 mb-6">
-                    打卡方式与Excel手动填写说明。
+                    打卡方式说明。
                 </p>
-                
+
                 <div class="bg-blue-50 rounded-lg p-4 space-y-3">
                     <h3 class="font-semibold text-gray-800 mb-2">📋 打卡方式：</h3>
                     <ol class="space-y-2 text-sm text-gray-700">
                         <li class="flex items-start">
                             <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">1</span>
-                            <span>使用上方"打卡考勤"功能在线提交</span>
+                            <span>使用“打卡考勤”页面在线提交</span>
                         </li>
                         <li class="flex items-start">
                             <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">2</span>
+                            <span>使用下方“在线填写”功能批量编辑</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center mr-2 flex-shrink-0 text-xs">3</span>
                             <span>或手动在Excel文件中填写时间</span>
                         </li>
                     </ol>
                 </div>
-                
+
+                <div class="mt-4">
+                    <button
+                        onclick="openExcelEditor()"
+                        class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
+                    >
+                        📝 在线填写Excel
+                    </button>
+                </div>
+
                 <div class="bg-green-50 rounded-lg p-4 space-y-3 mt-4">
                     <h3 class="font-semibold text-gray-800 mb-2">📝 Excel手动填写：</h3>
                     <ol class="space-y-2 text-sm text-gray-700">
@@ -152,28 +165,106 @@
                 <p class="text-gray-600 mb-6">
                     自动计算工时统计，包括总工时、平均工时、请假统计等。
                 </p>
-                
+
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             选择月份
                         </label>
-                        <input 
-                            type="month" 
-                            id="calculateMonth" 
+                        <input
+                            type="month"
+                            id="calculateMonth"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         >
                     </div>
-                    
-                    <button 
-                        onclick="calculateWorkHours()" 
+
+                    <button
+                        onclick="calculateWorkHours()"
                         class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95"
                     >
                         <span id="calculateBtn">计算工时</span>
                     </button>
                 </div>
-                
+
                 <div id="calculateResult" class="mt-4"></div>
+            </div>
+        </div>
+
+        <!-- Excel在线编辑弹窗 -->
+        <div id="excelEditorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                <div class="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold">📝 在线Excel编辑器</h2>
+                        <p class="text-cyan-100 mt-1" id="excelEditorTitle">选择月份并编辑考勤数据</p>
+                    </div>
+                    <button
+                        onclick="closeExcelEditor()"
+                        class="text-white hover:text-gray-200 text-3xl font-bold w-10 h-10 flex items-center justify-center rounded-full hover:bg-white hover:bg-opacity-20 transition-all"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 200px);">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择月份
+                        </label>
+                        <div class="flex gap-3">
+                            <input
+                                type="month"
+                                id="excelEditorMonth"
+                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                            >
+                            <button
+                                onclick="loadExcelData()"
+                                class="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg transition-all"
+                            >
+                                <span id="loadExcelBtn">🔄 加载数据</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="excelDataContainer" class="hidden">
+                        <div class="mb-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+                            <p class="text-blue-800 text-sm">
+                                <strong>💡 提示：</strong>直接在表格中修改时间，修改后自动保存到Excel文件
+                            </p>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">日期</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">星期</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假类型</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">工时</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="excelTableBody">
+                                    <!-- 数据将动态插入 -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <button
+                                onclick="closeExcelEditor()"
+                                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-all"
+                            >
+                                关闭
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="excelLoadingMessage" class="text-center py-12 text-gray-500">
+                        请选择月份并点击“加载数据”
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -182,14 +273,14 @@
             <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-3xl font-bold text-gray-800">📈 工时统计报告</h2>
-                    <button 
-                        onclick="closeReport()" 
+                    <button
+                        onclick="closeReport()"
                         class="text-gray-500 hover:text-gray-700 text-2xl"
                     >
                         ✕
                     </button>
                 </div>
-                
+
                 <div id="reportContent" class="space-y-6">
                     <!-- 报告内容将动态插入 -->
                 </div>
@@ -202,7 +293,7 @@
                 <span class="text-3xl mr-3">ℹ️</span>
                 工时计算规则
             </h2>
-            
+
             <div class="grid md:grid-cols-3 gap-6">
                 <div>
                     <h3 class="font-semibold text-lg text-gray-800 mb-3">📌 基本规则</h3>
@@ -225,7 +316,7 @@
                         </li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="font-semibold text-lg text-gray-800 mb-3">🏖️ 请假规则</h3>
                     <ul class="space-y-2 text-gray-700 text-sm">
@@ -247,7 +338,7 @@
                         </li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="font-semibold text-lg text-gray-800 mb-3">⚙️ 自定义配置</h3>
                     <ul class="space-y-2 text-gray-700 text-sm">
@@ -289,21 +380,21 @@
             const month = document.getElementById('templateMonth').value;
             const resultDiv = document.getElementById('generateResult');
             const btn = document.getElementById('generateBtn');
-            
+
             if (!month) {
                 showMessage(resultDiv, '请选择月份', 'error');
                 return;
             }
 
             btn.innerHTML = '<span class="loading"></span>';
-            
+
             try {
                 const response = await fetch(`/api/workhours/template/generate?yearMonth=${month}`, {
                     method: 'POST'
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showMessage(resultDiv, `✅ 模板生成成功！<br><small class="text-xs">文件路径: ${data.filePath}</small>`, 'success');
                 } else {
@@ -321,18 +412,18 @@
             const month = document.getElementById('calculateMonth').value;
             const resultDiv = document.getElementById('calculateResult');
             const btn = document.getElementById('calculateBtn');
-            
+
             if (!month) {
                 showMessage(resultDiv, '请选择月份', 'error');
                 return;
             }
 
             btn.innerHTML = '<span class="loading"></span>';
-            
+
             try {
                 const response = await fetch(`/api/workhours/calculate?yearMonth=${month}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     showMessage(resultDiv, '✅ 计算完成！', 'success');
                     displayReport(data.statistics);
@@ -350,7 +441,7 @@
         function displayReport(stats) {
             const reportSection = document.getElementById('reportSection');
             const reportContent = document.getElementById('reportContent');
-            
+
             const html = `
                 <div class="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl p-6 mb-6">
                     <h3 class="text-2xl font-bold mb-2">${stats.yearMonth}</h3>
@@ -437,26 +528,26 @@
                             <span class="font-bold text-xl text-yellow-600">${stats.totalLeaveHours} 小时</span>
                         </div>
                     </div>
-                    
+
                     ${stats.leaveRecords && stats.leaveRecords.length > 0 ? `
                     <div class="bg-yellow-50 rounded-lg p-4">
                         <h5 class="font-semibold text-gray-800 mb-3">📋 请假明细</h5>
                         <div class="space-y-2 max-h-64 overflow-y-auto">
                             ${stats.leaveRecords.map(record => {
-                                const leaveTypeStr = record.leaveType && record.leaveType !== 'NONE' 
+                                const leaveTypeStr = record.leaveType && record.leaveType !== 'NONE'
                                     ? `<span class="px-2 py-1 text-xs rounded-full ${
                                         record.leaveType === 'FULL_DAY' ? 'bg-red-100 text-red-700' :
                                         record.leaveType === 'MORNING' ? 'bg-orange-100 text-orange-700' :
                                         record.leaveType === 'AFTERNOON' ? 'bg-blue-100 text-blue-700' : ''
-                                    }">${record.leaveType === 'FULL_DAY' ? '全天' : 
-                                        record.leaveType === 'MORNING' ? '上午' : 
+                                    }">${record.leaveType === 'FULL_DAY' ? '全天' :
+                                        record.leaveType === 'MORNING' ? '上午' :
                                         record.leaveType === 'AFTERNOON' ? '下午' : ''}</span>`
                                     : '';
-                                
-                                const timeStr = record.startTime || record.endTime 
+
+                                const timeStr = record.startTime || record.endTime
                                     ? `${record.startTime || '未打卡'} ~ ${record.endTime || '未打卡'}`
                                     : '全天未打卡';
-                                
+
                                 return `
                                 <div class="flex items-center justify-between bg-white rounded p-3 text-sm hover:shadow-md transition-shadow">
                                     <div class="flex items-center space-x-3">
@@ -474,7 +565,7 @@
                 </div>
                 ` : ''}
             `;
-            
+
             reportContent.innerHTML = html;
             reportSection.classList.remove('hidden');
             reportSection.scrollIntoView({ behavior: 'smooth' });
@@ -498,6 +589,161 @@
                     element.innerHTML = '';
                 }
             }, 5000);
+        }
+
+        // 打开Excel编辑器
+        async function openExcelEditor() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('excelEditorMonth').value = currentMonth;
+            document.getElementById('excelEditorModal').classList.remove('hidden');
+
+            // 自动加载当前月份数据
+            await loadExcelData();
+        }
+
+        // 关闭Excel编辑器
+        function closeExcelEditor() {
+            document.getElementById('excelEditorModal').classList.add('hidden');
+            document.getElementById('excelDataContainer').classList.add('hidden');
+            document.getElementById('excelLoadingMessage').classList.remove('hidden');
+        }
+
+        // 加载Excel数据
+        async function loadExcelData() {
+            const month = document.getElementById('excelEditorMonth').value;
+            const btn = document.getElementById('loadExcelBtn');
+
+            if (!month) {
+                alert('请选择月份');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span> 加载中...';
+
+            try {
+                const response = await fetch(`/api/workhours/excel/data?yearMonth=${month}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayExcelData(data.data, month);
+                    document.getElementById('excelDataContainer').classList.remove('hidden');
+                    document.getElementById('excelLoadingMessage').classList.add('hidden');
+                } else {
+                    alert(`加载失败: ${data.message}`);
+                }
+            } catch (error) {
+                alert(`请求失败: ${error.message}`);
+            } finally {
+                btn.innerHTML = '🔄 加载数据';
+            }
+        }
+
+        // 显示Excel数据
+        function displayExcelData(records, yearMonth) {
+            const tbody = document.getElementById('excelTableBody');
+            document.getElementById('excelEditorTitle').textContent = `${yearMonth} 考勤数据`;
+
+            const today = new Date().toISOString().slice(0, 10);
+
+            tbody.innerHTML = records.map((record, index) => {
+                const isWeekend = !record.workday;
+                const isToday = record.date === today;
+                const rowClass = isToday ? 'bg-cyan-100' : (isWeekend ? 'bg-gray-50' : '');
+                const leaveTypeValue = record.leaveType || 'NONE';
+
+                return `
+                    <tr class="${rowClass} hover:bg-blue-50 transition-colors" data-date="${record.date}" id="row-${record.date}">
+                        <td class="px-4 py-3 border-b text-sm font-medium">${record.date}${isToday ? ' <span class="text-xs text-cyan-600 font-bold">今天</span>' : ''}</td>
+                        <td class="px-4 py-3 border-b text-sm">${record.dayOfWeek}</td>
+                        <td class="px-4 py-3 border-b text-sm">
+                            <input
+                                type="time"
+                                value="${record.startTime || ''}"
+                                onchange="updateAttendance('${record.date}', 'startTime', this.value)"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                            >
+                        </td>
+                        <td class="px-4 py-3 border-b text-sm">
+                            <input
+                                type="time"
+                                value="${record.endTime || ''}"
+                                onchange="updateAttendance('${record.date}', 'endTime', this.value)"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                            >
+                        </td>
+                        <td class="px-4 py-3 border-b text-sm">
+                            <select
+                                onchange="updateAttendance('${record.date}', 'leaveType', this.value)"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                            >
+                                <option value="NONE" ${leaveTypeValue === 'NONE' ? 'selected' : ''}>正常</option>
+                                <option value="MORNING" ${leaveTypeValue === 'MORNING' ? 'selected' : ''}>上午请假</option>
+                                <option value="AFTERNOON" ${leaveTypeValue === 'AFTERNOON' ? 'selected' : ''}>下午请假</option>
+                                <option value="FULL_DAY" ${leaveTypeValue === 'FULL_DAY' ? 'selected' : ''}>全天请假</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3 border-b text-sm font-semibold text-center">${record.workHours > 0 ? record.workHours.toFixed(2) : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // 滚动到当天的位置
+            setTimeout(() => {
+                const todayRow = document.getElementById(`row-${today}`);
+                if (todayRow) {
+                    todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+
+        // 更新考勤数据
+        let updateTimeout = null;
+        async function updateAttendance(date, field, value) {
+            // 清除之前的定时器
+            if (updateTimeout) {
+                clearTimeout(updateTimeout);
+            }
+
+            // 延迟保存，避免频繁请求
+            updateTimeout = setTimeout(async () => {
+                try {
+                    // 获取该日期行的所有数据
+                    const row = event.target.closest('tr');
+                    const startTimeInput = row.querySelector('input[type="time"]:nth-of-type(1)');
+                    const endTimeInput = row.querySelector('input[type="time"]:nth-of-type(2)');
+                    const leaveTypeSelect = row.querySelector('select');
+
+                    const requestBody = {
+                        date: date,
+                        startTime: startTimeInput.value || null,
+                        endTime: endTimeInput.value || null,
+                        leaveType: leaveTypeSelect.value,
+                        remark: null
+                    };
+
+                    const response = await fetch('/api/workhours/attendance/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // 显示成功提示
+                        row.classList.add('bg-green-50');
+                        setTimeout(() => {
+                            row.classList.remove('bg-green-50');
+                        }, 1000);
+                    } else {
+                        alert(`保存失败: ${data.message}`);
+                    }
+                } catch (error) {
+                    alert(`保存失败: ${error.message}`);
+                }
+            }, 500); // 500ms后保存
         }
 
     </script>

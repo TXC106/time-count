@@ -43,4 +43,14 @@ public class WorkHoursConfigRequest {
      * 标准下班时间（小时）
      */
     private Integer standardEndHour;
+    
+    /**
+     * 数据文件存储目录
+     */
+    private String dataDirectory;
+    
+    /**
+     * 文件名格式
+     */
+    private String fileNameFormat;
 }

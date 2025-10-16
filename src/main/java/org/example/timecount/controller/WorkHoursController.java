@@ -266,14 +266,16 @@ public class WorkHoursController {
         try {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("config", Map.of(
-                "expectedTotalHours", workHoursConfig.getExpectedTotalHours(),
-                "lunchBreakHours", workHoursConfig.getLunchBreakHours(),
-                "dinnerBreakHours", workHoursConfig.getDinnerBreakHours(),
-                "dinnerBreakThresholdHour", workHoursConfig.getDinnerBreakThresholdHour(),
-                "standardStartHour", workHoursConfig.getStandardStartHour(),
-                "standardEndHour", workHoursConfig.getStandardEndHour()
-            ));
+            Map<String, Object> config = new HashMap<>();
+            config.put("expectedTotalHours", workHoursConfig.getExpectedTotalHours());
+            config.put("lunchBreakHours", workHoursConfig.getLunchBreakHours());
+            config.put("dinnerBreakHours", workHoursConfig.getDinnerBreakHours());
+            config.put("dinnerBreakThresholdHour", workHoursConfig.getDinnerBreakThresholdHour());
+            config.put("standardStartHour", workHoursConfig.getStandardStartHour());
+            config.put("standardEndHour", workHoursConfig.getStandardEndHour());
+            config.put("dataDirectory", workHoursConfig.getDataDirectory());
+            config.put("fileNameFormat", workHoursConfig.getFileNameFormat());
+            response.put("config", config);
 
             return ResponseEntity.ok(response);
 
@@ -313,6 +315,12 @@ public class WorkHoursController {
             if (request.getStandardEndHour() != null) {
                 workHoursConfig.setStandardEndHour(request.getStandardEndHour());
             }
+            if (request.getDataDirectory() != null && !request.getDataDirectory().trim().isEmpty()) {
+                workHoursConfig.setDataDirectory(request.getDataDirectory());
+            }
+            if (request.getFileNameFormat() != null && !request.getFileNameFormat().trim().isEmpty()) {
+                workHoursConfig.setFileNameFormat(request.getFileNameFormat());
+            }
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -326,6 +334,29 @@ public class WorkHoursController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "更新配置失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 获取指定月份的Excel数据
+     */
+    @GetMapping("/excel/data")
+    public ResponseEntity<Map<String, Object>> getExcelData(@RequestParam String yearMonth) {
+        try {
+            WorkHoursStatistics statistics = calculationService.calculateWorkHours(yearMonth);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", statistics.getDailyRecords());
+            response.put("yearMonth", yearMonth);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("获取Excel数据失败", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取数据失败: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
     }

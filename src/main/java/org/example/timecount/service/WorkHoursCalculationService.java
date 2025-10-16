@@ -109,6 +109,7 @@ public class WorkHoursCalculationService {
             // 判断是否为工作日（周一到周五）
             int dayOfWeek = date.getDayOfWeek().getValue();
             boolean isWorkday = dayOfWeek >= 1 && dayOfWeek <= 5;
+            String dayOfWeekStr = getDayOfWeekString(dayOfWeek);
             
             // 判断是否为法定节假日
             boolean isHoliday = holidayService.isHoliday(date);
@@ -118,6 +119,7 @@ public class WorkHoursCalculationService {
 
             DailyRecord record = DailyRecord.builder()
                     .date(date)
+                    .dayOfWeek(dayOfWeekStr)
                     .startTime(startTime)
                     .endTime(endTime)
                     .isWorkday(isWorkday)
@@ -398,6 +400,22 @@ public class WorkHoursCalculationService {
                 return cell.getCellFormula();
             default:
                 return "";
+        }
+    }
+    
+    /**
+     * 获取星期的中文字符串
+     */
+    private String getDayOfWeekString(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case 1: return "星期一";
+            case 2: return "星期二";
+            case 3: return "星期三";
+            case 4: return "星期四";
+            case 5: return "星期五";
+            case 6: return "星期六";
+            case 7: return "星期日";
+            default: return "";
         }
     }
 }

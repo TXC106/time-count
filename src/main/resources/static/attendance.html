@@ -171,6 +171,22 @@
         // 设置当前日期为默认值
         const currentDate = new Date().toISOString().slice(0, 10);
         document.getElementById('attendanceDate').value = currentDate;
+        
+        // 从URL参数中获取预填数据
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateParam = urlParams.get('date');
+        const startTimeParam = urlParams.get('startTime');
+        const endTimeParam = urlParams.get('endTime');
+        
+        if (dateParam) {
+            document.getElementById('attendanceDate').value = dateParam;
+        }
+        if (startTimeParam && startTimeParam !== 'null') {
+            document.getElementById('attendanceStartTime').value = startTimeParam;
+        }
+        if (endTimeParam && endTimeParam !== 'null') {
+            document.getElementById('attendanceEndTime').value = endTimeParam;
+        }
 
         // 提交考勤打卡
         async function submitAttendance() {

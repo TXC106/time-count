@@ -168,6 +168,75 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-gradient-to-r from-green-50 to-teal-50 rounded-lg p-5 border border-green-200">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">📁</span>
+                        文件存储设置
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-gray-700 font-medium block mb-2">数据文件存储目录</label>
+                            <div class="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    id="configDataDirectory" 
+                                    placeholder="例如：data 或 D:/attendance"
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <button 
+                                    onclick="selectDirectory()" 
+                                    class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all whitespace-nowrap"
+                                    title="选择文件夹"
+                                >
+                                    📂 浏览
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">可以使用相对路径（如 data）或绝对路径（如 D:/attendance）</p>
+                        </div>
+                        
+                        <div>
+                            <label class="text-gray-700 font-medium block mb-2">文件名格式</label>
+                            <input 
+                                type="text" 
+                                id="configFileNameFormat" 
+                                placeholder="例如：attendance_{yearMonth}.xlsx"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                            >
+                            <p class="text-xs text-gray-500 mt-1">使用 {yearMonth} 作为占位符，格式为 YYYY-MM</p>
+                            
+                            <div class="mt-3">
+                                <p class="text-xs text-gray-600 font-semibold mb-2">📋 参考格式：</p>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button 
+                                        onclick="setFileNameFormat('attendance_{yearMonth}.xlsx')" 
+                                        class="text-left px-3 py-2 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-all text-sm"
+                                    >
+                                        <span class="text-green-600">✓</span> attendance_{yearMonth}.xlsx
+                                    </button>
+                                    <button 
+                                        onclick="setFileNameFormat('考勤_{yearMonth}.xlsx')" 
+                                        class="text-left px-3 py-2 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-all text-sm"
+                                    >
+                                        <span class="text-green-600">✓</span> 考勤_{yearMonth}.xlsx
+                                    </button>
+                                    <button 
+                                        onclick="setFileNameFormat('workhours_{yearMonth}.xlsx')" 
+                                        class="text-left px-3 py-2 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-all text-sm"
+                                    >
+                                        <span class="text-green-600">✓</span> workhours_{yearMonth}.xlsx
+                                    </button>
+                                    <button 
+                                        onclick="setFileNameFormat('{yearMonth}_attendance.xlsx')" 
+                                        class="text-left px-3 py-2 bg-white border border-gray-300 rounded hover:bg-green-50 hover:border-green-400 transition-all text-sm"
+                                    >
+                                        <span class="text-green-600">✓</span> {yearMonth}_attendance.xlsx
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="grid grid-cols-2 gap-4 pt-4">
                     <button 
@@ -265,6 +334,8 @@
                     document.getElementById('configDinnerThreshold').value = config.dinnerBreakThresholdHour;
                     document.getElementById('configStandardStart').value = config.standardStartHour;
                     document.getElementById('configStandardEnd').value = config.standardEndHour;
+                    document.getElementById('configDataDirectory').value = config.dataDirectory || 'data';
+                    document.getElementById('configFileNameFormat').value = config.fileNameFormat || 'attendance_{yearMonth}.xlsx';
                     
                     showMessage(document.getElementById('configResult'), '✅ 配置加载成功', 'success');
                 } else {
@@ -287,7 +358,9 @@
                 dinnerBreakHours: parseFloat(document.getElementById('configDinnerBreak').value),
                 dinnerBreakThresholdHour: parseInt(document.getElementById('configDinnerThreshold').value),
                 standardStartHour: parseInt(document.getElementById('configStandardStart').value),
-                standardEndHour: parseInt(document.getElementById('configStandardEnd').value)
+                standardEndHour: parseInt(document.getElementById('configStandardEnd').value),
+                dataDirectory: document.getElementById('configDataDirectory').value,
+                fileNameFormat: document.getElementById('configFileNameFormat').value
             };
 
             // 验证数据
@@ -336,6 +409,49 @@
                     element.innerHTML = '';
                 }
             }, 5000);
+        }
+
+        // 选择文件夹
+        function selectDirectory() {
+            // 创建一个隐藏的input元素用于选择文件夹
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.webkitdirectory = true; // Chrome/Edge
+            input.directory = true; // Firefox
+            input.multiple = true;
+            
+            input.onchange = function(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    // 获取第一个文件的路径，并提取目录路径
+                    const fullPath = files[0].webkitRelativePath || files[0].name;
+                    const dirPath = fullPath.split('/')[0];
+                    
+                    // 尝试获取完整路径（浏览器安全限制可能无法获取）
+                    if (files[0].path) {
+                        // Electron环境下可以获取完整路径
+                        const fullDirPath = files[0].path.substring(0, files[0].path.lastIndexOf('\\'));
+                        document.getElementById('configDataDirectory').value = fullDirPath;
+                    } else {
+                        // 浏览器环境下只能获取相对路径
+                        document.getElementById('configDataDirectory').value = dirPath;
+                        alert('浏览器安全限制：只能获取文件夹名称。\n请手动输入完整路径，例如：D:/attendance');
+                    }
+                }
+            };
+            
+            input.click();
+        }
+
+        // 设置文件名格式
+        function setFileNameFormat(format) {
+            document.getElementById('configFileNameFormat').value = format;
+            // 添加视觉反馈
+            const input = document.getElementById('configFileNameFormat');
+            input.classList.add('ring-2', 'ring-green-500');
+            setTimeout(() => {
+                input.classList.remove('ring-2', 'ring-green-500');
+            }, 500);
         }
     </script>
 </body>
