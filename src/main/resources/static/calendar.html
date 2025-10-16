@@ -260,13 +260,13 @@
             let dayNumClass = 'text-gray-800';
             
             if (record) {
-                if (record.isHoliday) {
+                if (record.holiday || record.isHoliday) {
                     bgClass = 'bg-red-50 border-red-500';
                     dayNumClass = 'text-red-700';
-                } else if (record.isLeave || record.leave) {
+                } else if (record.leave || record.isLeave) {
                     bgClass = 'bg-yellow-50 border-yellow-500';
                     dayNumClass = 'text-yellow-700';
-                } else if (record.isWorkday || record.workday) {
+                } else if (record.workday || record.isWorkday) {
                     bgClass = 'bg-green-50 border-green-500';
                     dayNumClass = 'text-green-700';
                 } else {
@@ -298,7 +298,7 @@
             // 显示考勤信息
             if (record) {
                 // 节假日标记
-                if (record.isHoliday) {
+                if (record.holiday || record.isHoliday) {
                     const holidayTag = document.createElement('div');
                     holidayTag.className = 'text-xs bg-red-500 text-white px-2 py-1 rounded mb-1 font-semibold';
                     holidayTag.textContent = '🎉 节假日';
@@ -306,7 +306,7 @@
                 }
                 
                 // 请假标记
-                if (record.isLeave || record.leave) {
+                if (record.leave || record.isLeave) {
                     const leaveTag = document.createElement('div');
                     leaveTag.className = 'text-xs bg-yellow-500 text-white px-2 py-1 rounded mb-1 font-semibold';
                     const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天' :
@@ -370,11 +370,11 @@
             
             let details = `📅 ${dateStr}\n\n`;
             
-            if (record.isHoliday) {
+            if (record.holiday || record.isHoliday) {
                 details += `🎉 法定节假日\n\n`;
             }
             
-            if (record.isWorkday || record.workday) {
+            if (record.workday || record.isWorkday) {
                 details += `📌 工作日\n`;
             } else {
                 details += `📌 周末\n`;
@@ -390,7 +390,7 @@
                 details += `\n⏱️ 工时: ${record.workHours.toFixed(2)} 小时\n`;
             }
             
-            if (record.isLeave || record.leave) {
+            if (record.leave || record.isLeave) {
                 details += `\n🏖️ 请假信息：\n`;
                 const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天请假' :
                                      record.leaveType === 'MORNING' ? '上午请假' :
