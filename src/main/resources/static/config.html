@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>配置管理 - 工时计算系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-orange-50 to-amber-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <header class="text-center mb-12 fade-in">
+            <h1 class="text-5xl font-bold text-orange-900 mb-4">
+                ⚙️ 配置管理
+            </h1>
+            <p class="text-gray-600 text-lg mb-6">
+                自定义工时计算规则和期望总工时
+            </p>
+            <div class="flex justify-center gap-4">
+                <a href="/" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+                    📊 统计面板
+                </a>
+                <a href="/attendance.html" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
+                    ✓ 打卡考勤
+                </a>
+                <a href="/config.html" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold">
+                    ⚙️ 配置管理
+                </a>
+                <a href="/calendar.html" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                    📅 日历视图
+                </a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all duration-300 fade-in max-w-2xl mx-auto">
+            <div class="flex items-center mb-6">
+                <div class="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center text-white text-3xl mr-4">
+                    ⚙️
+                </div>
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">配置管理</h2>
+                    <p class="text-gray-600 mt-1">自定义您的工时计算规则</p>
+                </div>
+            </div>
+            
+            <div class="space-y-5">
+                <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-5 border border-orange-200">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">🎯</span>
+                        工时目标设置
+                    </h3>
+                    <div class="flex justify-between items-center">
+                        <label class="text-gray-700 font-medium">期望总工时</label>
+                        <div class="flex items-center">
+                            <input 
+                                type="number" 
+                                id="configExpectedHours" 
+                                step="0.5"
+                                class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                            >
+                            <span class="ml-3 text-gray-600 font-medium">小时</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-5 border border-blue-200">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">⏰</span>
+                        休息时间设置
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-gray-700 font-medium">午休时间</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="configLunchBreak" 
+                                    step="0.5"
+                                    class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <span class="ml-3 text-gray-600 font-medium">小时</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <label class="text-gray-700 font-medium">晚餐时间</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="configDinnerBreak" 
+                                    step="0.5"
+                                    class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <span class="ml-3 text-gray-600 font-medium">小时</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <label class="text-gray-700 font-medium">晚餐临界点</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="configDinnerThreshold" 
+                                    min="0"
+                                    max="23"
+                                    class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <span class="ml-3 text-gray-600 font-medium">点</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-5 border border-purple-200">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-4 flex items-center">
+                        <span class="text-2xl mr-2">🕐</span>
+                        标准工作时间
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-gray-700 font-medium">标准上班时间</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="configStandardStart" 
+                                    min="0"
+                                    max="23"
+                                    class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <span class="ml-3 text-gray-600 font-medium">点</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <label class="text-gray-700 font-medium">标准下班时间</label>
+                            <div class="flex items-center">
+                                <input 
+                                    type="number" 
+                                    id="configStandardEnd" 
+                                    min="0"
+                                    max="23"
+                                    class="w-28 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg"
+                                >
+                                <span class="ml-3 text-gray-600 font-medium">点</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 pt-4">
+                    <button 
+                        onclick="loadConfig()" 
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 text-lg shadow-lg"
+                    >
+                        🔄 加载当前配置
+                    </button>
+                    <button 
+                        onclick="saveConfig()" 
+                        class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95 text-lg shadow-lg"
+                    >
+                        <span id="configBtn">💾 保存配置</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="configResult" class="mt-6"></div>
+
+            <div class="mt-6 space-y-3">
+                <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+                    <p class="text-blue-800 text-sm">
+                        <strong>💡 提示：</strong>配置修改后会立即生效，影响后续的工时计算
+                    </p>
+                </div>
+                <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded">
+                    <p class="text-orange-800 text-sm">
+                        <strong>⚠️ 注意：</strong>晚餐临界点表示下班时间超过该时间点后，会扣除晚餐时间
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置说明 -->
+        <div class="bg-white rounded-2xl shadow-lg p-8 mt-8 fade-in max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <span class="text-3xl mr-3">📖</span>
+                配置说明
+            </h2>
+            
+            <div class="space-y-4">
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-2">期望总工时</h3>
+                    <p class="text-gray-600 text-sm">
+                        设置每月期望达到的总工时数，系统会根据此值计算与目标的差距，以及剩余工作日需要的平均工时。
+                    </p>
+                </div>
+                
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-2">午休时间</h3>
+                    <p class="text-gray-600 text-sm">
+                        每天工作时间中扣除的午休时长。正常出勤时会自动扣除此时间。
+                    </p>
+                </div>
+                
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-2">晚餐时间与临界点</h3>
+                    <p class="text-gray-600 text-sm">
+                        当下班时间晚于晚餐临界点时，会自动扣除晚餐时间。例如：临界点设为19点，晚餐时间0.5小时，则19点后下班会扣除0.5小时。
+                    </p>
+                </div>
+                
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h3 class="font-semibold text-lg text-gray-800 mb-2">标准工作时间</h3>
+                    <p class="text-gray-600 text-sm">
+                        用于判定迟到、早退和请假。上班晚于标准上班时间或下班早于标准下班时间，系统会自动识别为请假。
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center mt-12 text-gray-600">
+            <p>工时计算系统 v1.0 | Spring Boot + Apache POI</p>
+        </footer>
+    </div>
+
+    <script>
+        // 页面加载时自动加载配置
+        window.addEventListener('load', function() {
+            loadConfig();
+        });
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/workhours/config');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const config = data.config;
+                    document.getElementById('configExpectedHours').value = config.expectedTotalHours;
+                    document.getElementById('configLunchBreak').value = config.lunchBreakHours;
+                    document.getElementById('configDinnerBreak').value = config.dinnerBreakHours;
+                    document.getElementById('configDinnerThreshold').value = config.dinnerBreakThresholdHour;
+                    document.getElementById('configStandardStart').value = config.standardStartHour;
+                    document.getElementById('configStandardEnd').value = config.standardEndHour;
+                    
+                    showMessage(document.getElementById('configResult'), '✅ 配置加载成功', 'success');
+                } else {
+                    showMessage(document.getElementById('configResult'), `❌ 加载失败: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                showMessage(document.getElementById('configResult'), `❌ 加载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 保存配置
+        async function saveConfig() {
+            const resultDiv = document.getElementById('configResult');
+            const btn = document.getElementById('configBtn');
+            
+            const configData = {
+                expectedTotalHours: parseFloat(document.getElementById('configExpectedHours').value),
+                lunchBreakHours: parseFloat(document.getElementById('configLunchBreak').value),
+                dinnerBreakHours: parseFloat(document.getElementById('configDinnerBreak').value),
+                dinnerBreakThresholdHour: parseInt(document.getElementById('configDinnerThreshold').value),
+                standardStartHour: parseInt(document.getElementById('configStandardStart').value),
+                standardEndHour: parseInt(document.getElementById('configStandardEnd').value)
+            };
+
+            // 验证数据
+            if (isNaN(configData.expectedTotalHours) || isNaN(configData.lunchBreakHours) || 
+                isNaN(configData.dinnerBreakHours) || isNaN(configData.dinnerBreakThresholdHour) ||
+                isNaN(configData.standardStartHour) || isNaN(configData.standardEndHour)) {
+                showMessage(resultDiv, '❌ 请填写所有配置项', 'error');
+                return;
+            }
+
+            btn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch('/api/workhours/config', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(configData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(resultDiv, '✅ 配置保存成功！', 'success');
+                } else {
+                    showMessage(resultDiv, `❌ ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showMessage(resultDiv, `❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                btn.innerHTML = '💾 保存配置';
+            }
+        }
+
+        // 显示消息
+        function showMessage(element, message, type) {
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800';
+            element.innerHTML = `
+                <div class="${bgColor} border-l-4 p-4 rounded text-sm animate-pulse">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                if (type === 'success') {
+                    element.innerHTML = '';
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
