@@ -21,8 +21,14 @@ public class HolidayService {
      */
     private final Set<LocalDate> holidays = new HashSet<>();
     
+    /**
+     * 调休工作日集合（周末需要上班的日期）
+     */
+    private final Set<LocalDate> makeupWorkdays = new HashSet<>();
+    
     public HolidayService() {
         initHolidays();
+        initMakeupWorkdays();
     }
     
     /**
@@ -76,6 +82,28 @@ public class HolidayService {
     }
     
     /**
+     * 初始化调休工作日
+     * 2025年调休工作日安排（周末需要上班的日期）
+     */
+    private void initMakeupWorkdays() {
+        // 春节调休：2025年1月26日（周日）上班
+        makeupWorkdays.add(LocalDate.of(2025, 1, 26));
+        
+        // 清明节调休：暂无
+        
+        // 劳动节调休：2025年4月27日（周日）上班
+        makeupWorkdays.add(LocalDate.of(2025, 4, 27));
+        
+        // 端午节调休：暂无
+        
+        // 国庆节调休：2025年9月28日（周日）、10月11日（周六）上班
+        makeupWorkdays.add(LocalDate.of(2025, 9, 28));
+        makeupWorkdays.add(LocalDate.of(2025, 10, 11));
+        
+        log.info("已加载 {} 个调休工作日", makeupWorkdays.size());
+    }
+    
+    /**
      * 判断指定日期是否为法定节假日
      * 
      * @param date 日期
@@ -85,6 +113,20 @@ public class HolidayService {
         boolean result = holidays.contains(date);
         if (result) {
             log.debug("日期 {} 是法定节假日", date);
+        }
+        return result;
+    }
+    
+    /**
+     * 判断指定日期是否为调休工作日（周末需要上班）
+     * 
+     * @param date 日期
+     * @return true表示是调休工作日，false表示不是
+     */
+    public boolean isMakeupWorkday(LocalDate date) {
+        boolean result = makeupWorkdays.contains(date);
+        if (result) {
+            log.debug("日期 {} 是调休工作日", date);
         }
         return result;
     }

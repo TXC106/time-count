@@ -79,10 +79,14 @@
                     </button>
                 </div>
                 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 flex-wrap">
                     <div class="flex items-center gap-2 text-sm">
                         <div class="w-4 h-4 bg-green-100 border-2 border-green-500 rounded"></div>
                         <span class="text-gray-700">工作日</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm">
+                        <div class="w-4 h-4 bg-blue-100 border-2 border-blue-500 rounded"></div>
+                        <span class="text-gray-700">调休</span>
                     </div>
                     <div class="flex items-center gap-2 text-sm">
                         <div class="w-4 h-4 bg-red-100 border-2 border-red-500 rounded"></div>
@@ -258,15 +262,32 @@
             // 确定背景颜色和边框
             let bgClass = 'bg-white border-gray-200';
             let dayNumClass = 'text-gray-800';
+            let isMakeupWorkday = false;
+            
+            // 判断是否为周末
+            const date = new Date(dateStr);
+            const dayOfWeek = date.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
             
             if (record) {
-                if (record.holiday || record.isHoliday) {
+                const isHoliday = record.holiday || record.isHoliday;
+                const isWorkday = record.workday || record.isWorkday;
+                const isLeave = record.leave || record.isLeave;
+                
+                // 判断是否为调休工作日（周末但是工作日）
+                isMakeupWorkday = isWeekend && isWorkday && !isHoliday;
+                
+                if (isHoliday) {
                     bgClass = 'bg-red-50 border-red-500';
                     dayNumClass = 'text-red-700';
-                } else if (record.leave || record.isLeave) {
+                } else if (isLeave) {
                     bgClass = 'bg-yellow-50 border-yellow-500';
                     dayNumClass = 'text-yellow-700';
-                } else if (record.workday || record.isWorkday) {
+                } else if (isMakeupWorkday) {
+                    // 调休工作日显示为蓝色
+                    bgClass = 'bg-blue-50 border-blue-500';
+                    dayNumClass = 'text-blue-700';
+                } else if (isWorkday) {
                     bgClass = 'bg-green-50 border-green-500';
                     dayNumClass = 'text-green-700';
                 } else {
@@ -274,10 +295,8 @@
                     dayNumClass = 'text-gray-500';
                 }
             } else {
-                // 判断是否周末
-                const date = new Date(dateStr);
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                // 没有记录时，判断是否周末
+                if (isWeekend) {
                     bgClass = 'bg-gray-100 border-gray-300';
                     dayNumClass = 'text-gray-500';
                 }
@@ -297,16 +316,27 @@
             
             // 显示考勤信息
             if (record) {
+                const isHoliday = record.holiday || record.isHoliday;
+                const isLeave = record.leave || record.isLeave;
+                
                 // 节假日标记
-                if (record.holiday || record.isHoliday) {
+                if (isHoliday) {
                     const holidayTag = document.createElement('div');
                     holidayTag.className = 'text-xs bg-red-500 text-white px-2 py-1 rounded mb-1 font-semibold';
                     holidayTag.textContent = '🎉 节假日';
                     div.appendChild(holidayTag);
                 }
                 
-                // 请假标记
-                if (record.leave || record.isLeave) {
+                // 调休工作日标记
+                if (isMakeupWorkday) {
+                    const makeupTag = document.createElement('div');
+                    makeupTag.className = 'text-xs bg-blue-500 text-white px-2 py-1 rounded mb-1 font-semibold';
+                    makeupTag.textContent = '📅 调休';
+                    div.appendChild(makeupTag);
+                }
+                
+                // 请假标记（非节假日才显示）
+                if (isLeave && !isHoliday) {
                     const leaveTag = document.createElement('div');
                     leaveTag.className = 'text-xs bg-yellow-500 text-white px-2 py-1 rounded mb-1 font-semibold';
                     const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天' :
@@ -316,8 +346,8 @@
                     div.appendChild(leaveTag);
                 }
                 
-                // 工时信息
-                if (record.startTime || record.endTime) {
+                // 工时信息（非节假日才显示，或节假日加班）
+                if (!isHoliday && (record.startTime || record.endTime)) {
                     const timeDiv = document.createElement('div');
                     timeDiv.className = 'text-xs text-gray-600 space-y-1';
                     
@@ -338,12 +368,20 @@
                     div.appendChild(timeDiv);
                 }
                 
-                // 工时
+                // 工时（非节假日才显示，或显示节假日加班）
                 if (record.workHours > 0) {
-                    const hoursDiv = document.createElement('div');
-                    hoursDiv.className = 'text-xs font-bold text-blue-600 mt-1';
-                    hoursDiv.textContent = `⏱️ ${record.workHours.toFixed(1)}h`;
-                    div.appendChild(hoursDiv);
+                    if (isHoliday) {
+                        // 节假日加班标记
+                        const overtimeDiv = document.createElement('div');
+                        overtimeDiv.className = 'text-xs font-bold text-orange-600 mt-1';
+                        overtimeDiv.textContent = `💼 加班 ${record.workHours.toFixed(1)}h`;
+                        div.appendChild(overtimeDiv);
+                    } else {
+                        const hoursDiv = document.createElement('div');
+                        hoursDiv.className = 'text-xs font-bold text-blue-600 mt-1';
+                        hoursDiv.textContent = `⏱️ ${record.workHours.toFixed(1)}h`;
+                        div.appendChild(hoursDiv);
+                    }
                 }
                 
                 // 请假时长
@@ -370,11 +408,20 @@
             
             let details = `📅 ${dateStr}\n\n`;
             
-            if (record.holiday || record.isHoliday) {
-                details += `🎉 法定节假日\n\n`;
-            }
+            const isHoliday = record.holiday || record.isHoliday;
+            const isWorkday = record.workday || record.isWorkday;
             
-            if (record.workday || record.isWorkday) {
+            // 判断是否为周末
+            const date = new Date(dateStr);
+            const dayOfWeek = date.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            const isMakeupWorkday = isWeekend && isWorkday && !isHoliday;
+            
+            if (isHoliday) {
+                details += `🎉 法定节假日\n\n`;
+            } else if (isMakeupWorkday) {
+                details += `📅 调休工作日（周末上班）\n\n`;
+            } else if (isWorkday) {
                 details += `📌 工作日\n`;
             } else {
                 details += `📌 周末\n`;

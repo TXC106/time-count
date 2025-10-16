@@ -108,7 +108,6 @@ public class WorkHoursCalculationService {
 
             // 判断是否为工作日（周一到周五）
             int dayOfWeek = date.getDayOfWeek().getValue();
-            boolean isWorkday = dayOfWeek >= 1 && dayOfWeek <= 5;
             String dayOfWeekStr = getDayOfWeekString(dayOfWeek);
             
             // 判断是否为法定节假日
@@ -116,6 +115,15 @@ public class WorkHoursCalculationService {
             if (isHoliday) {
                 log.info("检测到法定节假日: {}", date);
             }
+            
+            // 判断是否为调休工作日
+            boolean isMakeupWorkday = holidayService.isMakeupWorkday(date);
+            if (isMakeupWorkday) {
+                log.info("检测到调休工作日: {}", date);
+            }
+            
+            // 工作日判断：(周一到周五且不是法定节假日) 或 (调休工作日)
+            boolean isWorkday = ((dayOfWeek >= 1 && dayOfWeek <= 5) && !isHoliday) || isMakeupWorkday;
 
             DailyRecord record = DailyRecord.builder()
                     .date(date)
@@ -313,7 +321,11 @@ public class WorkHoursCalculationService {
 
         while (!date.isAfter(endOfMonth)) {
             int dayOfWeek = date.getDayOfWeek().getValue();
-            if (dayOfWeek >= 1 && dayOfWeek <= 5) { // 周一到周五
+            boolean isHoliday = holidayService.isHoliday(date);
+            boolean isMakeupWorkday = holidayService.isMakeupWorkday(date);
+            
+            // 工作日判断：(周一到周五且不是法定节假日) 或 (调休工作日)
+            if (((dayOfWeek >= 1 && dayOfWeek <= 5) && !isHoliday) || isMakeupWorkday) {
                 count++;
             }
             date = date.plusDays(1);
