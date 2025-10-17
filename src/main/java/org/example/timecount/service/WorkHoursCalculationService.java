@@ -160,51 +160,131 @@ public class WorkHoursCalculationService {
 
     /**
      * 检查请假状态
+     * 根据打卡时间和请假类型自动判断请假时长
      */
     private void checkLeaveStatus(DailyRecord record) {
         LocalTime startTime = record.getStartTime();
         LocalTime endTime = record.getEndTime();
+        DailyRecord.LeaveType leaveType = record.getLeaveType();
 
         // 标准上班时间和下班时间
-        LocalTime standardStart = LocalTime.of(config.getStandardStartHour(), 0);
-        LocalTime standardEnd = LocalTime.of(config.getStandardEndHour(), 0);
+        LocalTime standardStart = LocalTime.of(config.getStandardStartHour(), 0); // 9:00
+        LocalTime standardEnd = LocalTime.of(config.getStandardEndHour(), 0); // 18:00
+        LocalTime lateThreshold = LocalTime.of(10, 0); // 10点前算迟到，10点后算请假
+        LocalTime lunchStart = LocalTime.of(12, 0);
+        LocalTime lunchEnd = LocalTime.of(13, 0);
 
-        // 如果上下班时间为空，或上班晚于9点，或下班早于18点，视为请假
-        if (startTime == null || endTime == null ||
-                startTime.isAfter(standardStart) ||
-                endTime.isBefore(standardEnd)) {
-
-            record.setLeave(true);
-
-            // 计算请假时长
-            double leaveHours = 0.0;
-
-            if (startTime == null && endTime == null) {
-                // 全天请假：标准工时 9-12 + 13-18 = 8小时
-                leaveHours = 8.0;
-            } else if (startTime == null) {
-                // 上午请假
-                if (endTime.isBefore(LocalTime.of(13, 0))) {
-                    leaveHours = Duration.between(standardStart, LocalTime.of(12, 0)).toMinutes() / 60.0;
-                } else {
-                    leaveHours = Duration.between(standardStart, LocalTime.of(12, 0)).toMinutes() / 60.0;
-                }
-            } else if (endTime == null) {
-                // 下午请假
-                if (startTime.isBefore(LocalTime.of(13, 0))) {
-                    leaveHours = Duration.between(LocalTime.of(13, 0), standardEnd).toMinutes() / 60.0;
-                } else {
-                    leaveHours = Duration.between(startTime, standardEnd).toMinutes() / 60.0;
-                }
-            } else {
-                // 迟到或早退
-                double actualHours = calculateDailyWorkHours(startTime, endTime, record.getLeaveType() != null ? record.getLeaveType() : DailyRecord.LeaveType.NONE);
-                double standardHours = 8.0; // 标准工时
-                leaveHours = Math.max(0, standardHours - actualHours);
+        // 处理迟到（9点后10点前上班，且标记为迟到）
+        if (leaveType == DailyRecord.LeaveType.LATE) {
+            if (startTime != null && startTime.isAfter(standardStart) && startTime.isBefore(lateThreshold)) {
+                // 迟到不算请假，不扣除请假时长
+                record.setLeave(false);
+                record.setLeaveHours(0.0);
+                log.debug("迟到: 上班时间 {}", startTime);
+                return;
             }
-
-            record.setLeaveHours(leaveHours);
         }
+
+        // 处理明确的请假类型
+        if (leaveType == DailyRecord.LeaveType.FULL_DAY) {
+            // 全天请假
+            record.setLeave(true);
+            record.setLeaveHours(8.0);
+            log.debug("全天请假: 8小时");
+            return;
+        } else if (leaveType == DailyRecord.LeaveType.MORNING) {
+            // 上午请假：9:00-12:00 = 3小时
+            record.setLeave(true);
+            record.setLeaveHours(3.0);
+            log.debug("上午请假: 3小时");
+            return;
+        } else if (leaveType == DailyRecord.LeaveType.AFTERNOON) {
+            // 下午请假：13:00-18:00 = 5小时
+            record.setLeave(true);
+            record.setLeaveHours(5.0);
+            log.debug("下午请假: 5小时");
+            return;
+        }
+
+        // 自动判断请假情况（请假类型为NONE时）
+        if (startTime == null && endTime == null) {
+            // 全天未打卡，视为全天请假
+            record.setLeave(true);
+            record.setLeaveHours(8.0);
+            log.debug("全天未打卡，视为全天请假: 8小时");
+            return;
+        }
+
+        // 计算实际缺勤时长
+        double leaveHours = 0.0;
+        boolean hasLeave = false;
+
+        if (startTime == null) {
+            // 未打上班卡，上午请假
+            leaveHours += 3.0; // 9:00-12:00
+            hasLeave = true;
+            log.debug("未打上班卡，上午请假: 3小时");
+        } else if (startTime.isAfter(standardStart)) {
+            // 上班晚于9点
+            if (startTime.isBefore(lateThreshold)) {
+                // 9点后10点前，如果没有标记为迟到，则按请假处理
+                if (leaveType != DailyRecord.LeaveType.LATE) {
+                    if (startTime.isBefore(lunchStart)) {
+                        // 10点前到，计算9点到实际到达时间的请假时长
+                        leaveHours += Duration.between(standardStart, startTime).toMinutes() / 60.0;
+                        hasLeave = true;
+                        log.debug("上班晚于9点（10点前），请假: {} 小时", leaveHours);
+                    }
+                }
+            } else if (startTime.isBefore(lunchStart)) {
+                // 10点后12点前到，上午部分请假
+                leaveHours += Duration.between(standardStart, startTime).toMinutes() / 60.0;
+                hasLeave = true;
+                log.debug("10点后到（12点前），上午请假: {} 小时", leaveHours);
+            } else if (startTime.isBefore(lunchEnd)) {
+                // 12点-13点到，上午全部请假
+                leaveHours += 3.0;
+                hasLeave = true;
+                log.debug("午休时间到，上午请假: 3小时");
+            } else {
+                // 13点后到，上午全部请假 + 下午部分请假
+                leaveHours += 3.0; // 上午
+                leaveHours += Duration.between(lunchEnd, startTime).toMinutes() / 60.0; // 下午部分
+                hasLeave = true;
+                log.debug("下午到，请假: {} 小时", leaveHours);
+            }
+        }
+
+        if (endTime == null) {
+            // 未打下班卡，下午请假
+            leaveHours += 5.0; // 13:00-18:00
+            hasLeave = true;
+            log.debug("未打下班卡，下午请假: 5小时");
+        } else if (endTime.isBefore(standardEnd)) {
+            // 下班早于18点
+            if (endTime.isAfter(lunchEnd)) {
+                // 13点后离开，计算实际离开时间到18点的请假时长
+                leaveHours += Duration.between(endTime, standardEnd).toMinutes() / 60.0;
+                hasLeave = true;
+                log.debug("下班早于18点，请假: {} 小时", Duration.between(endTime, standardEnd).toMinutes() / 60.0);
+            } else if (endTime.isAfter(lunchStart)) {
+                // 12点-13点离开，下午全部请假
+                leaveHours += 5.0;
+                hasLeave = true;
+                log.debug("午休时间离开，下午请假: 5小时");
+            } else {
+                // 12点前离开，上午部分请假 + 下午全部请假
+                if (startTime != null && startTime.isBefore(lunchStart)) {
+                    leaveHours += Duration.between(endTime, lunchStart).toMinutes() / 60.0; // 上午部分
+                }
+                leaveHours += 5.0; // 下午全部
+                hasLeave = true;
+                log.debug("12点前离开，请假: {} 小时", leaveHours);
+            }
+        }
+
+        record.setLeave(hasLeave);
+        record.setLeaveHours(leaveHours);
     }
 
     /**
@@ -349,6 +429,8 @@ public class WorkHoursCalculationService {
             return DailyRecord.LeaveType.AFTERNOON;
         } else if (type.contains("全天")) {
             return DailyRecord.LeaveType.FULL_DAY;
+        } else if (type.contains("迟到")) {
+            return DailyRecord.LeaveType.LATE;
         }
         
         return DailyRecord.LeaveType.NONE;

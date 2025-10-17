@@ -243,6 +243,7 @@
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假类型</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">工时</th>
+                                        <th class="px-4 py-3 border-b text-center text-sm font-semibold text-gray-700">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="excelTableBody">
@@ -659,7 +660,7 @@
                             <input
                                 type="time"
                                 value="${record.startTime || ''}"
-                                onchange="updateAttendance('${record.date}', 'startTime', this.value)"
+                                onchange="updateAttendance('${record.date}', 'startTime', this.value, event)"
                                 class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                             >
                         </td>
@@ -667,22 +668,32 @@
                             <input
                                 type="time"
                                 value="${record.endTime || ''}"
-                                onchange="updateAttendance('${record.date}', 'endTime', this.value)"
+                                onchange="updateAttendance('${record.date}', 'endTime', this.value, event)"
                                 class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
                             >
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
                             <select
-                                onchange="updateAttendance('${record.date}', 'leaveType', this.value)"
+                                onchange="updateAttendance('${record.date}', 'leaveType', this.value, event)"
                                 class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
                             >
                                 <option value="NONE" ${leaveTypeValue === 'NONE' ? 'selected' : ''}>正常</option>
                                 <option value="MORNING" ${leaveTypeValue === 'MORNING' ? 'selected' : ''}>上午请假</option>
                                 <option value="AFTERNOON" ${leaveTypeValue === 'AFTERNOON' ? 'selected' : ''}>下午请假</option>
                                 <option value="FULL_DAY" ${leaveTypeValue === 'FULL_DAY' ? 'selected' : ''}>全天请假</option>
+                                <option value="LATE" ${leaveTypeValue === 'LATE' ? 'selected' : ''}>迟到</option>
                             </select>
                         </td>
                         <td class="px-4 py-3 border-b text-sm font-semibold text-center">${record.workHours > 0 ? record.workHours.toFixed(2) : '-'}</td>
+                        <td class="px-4 py-3 border-b text-center">
+                            <button
+                                onclick="clearDayData('${record.date}')"
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
+                                title="清空该日数据"
+                            >
+                                🗑️ 清空
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -698,7 +709,7 @@
 
         // 更新考勤数据
         let updateTimeout = null;
-        async function updateAttendance(date, field, value) {
+        async function updateAttendance(date, field, value, evt) {
             // 清除之前的定时器
             if (updateTimeout) {
                 clearTimeout(updateTimeout);
@@ -708,16 +719,31 @@
             updateTimeout = setTimeout(async () => {
                 try {
                     // 获取该日期行的所有数据
-                    const row = event.target.closest('tr');
-                    const startTimeInput = row.querySelector('input[type="time"]:nth-of-type(1)');
-                    const endTimeInput = row.querySelector('input[type="time"]:nth-of-type(2)');
+                    const row = evt.target.closest('tr');
+                    
+                    if (!row) {
+                        console.error('无法找到行元素');
+                        return;
+                    }
+                    
+                    const timeInputs = row.querySelectorAll('input[type="time"]');
+                    const startTimeInput = timeInputs[0];
+                    const endTimeInput = timeInputs[1];
                     const leaveTypeSelect = row.querySelector('select');
+
+                    // 调试日志
+                    console.log('保存数据:', {
+                        date,
+                        startTime: startTimeInput?.value,
+                        endTime: endTimeInput?.value,
+                        leaveType: leaveTypeSelect?.value
+                    });
 
                     const requestBody = {
                         date: date,
-                        startTime: startTimeInput.value || null,
-                        endTime: endTimeInput.value || null,
-                        leaveType: leaveTypeSelect.value,
+                        startTime: startTimeInput?.value || null,
+                        endTime: endTimeInput?.value || null,
+                        leaveType: leaveTypeSelect?.value || 'NONE',
                         remark: null
                     };
 
@@ -737,13 +763,54 @@
                         setTimeout(() => {
                             row.classList.remove('bg-green-50');
                         }, 1000);
+                        console.log('保存成功');
                     } else {
                         alert(`保存失败: ${data.message}`);
+                        console.error('保存失败:', data.message);
                     }
                 } catch (error) {
+                    console.error('保存异常:', error);
                     alert(`保存失败: ${error.message}`);
                 }
             }, 500); // 500ms后保存
+        }
+
+        // 清空某日数据
+        async function clearDayData(date) {
+            if (!confirm(`确定要清空 ${date} 的所有数据吗？\n\n此操作将清空该日的：\n• 上班时间\n• 下班时间\n• 请假类型`)) {
+                return;
+            }
+
+            try {
+                const requestBody = {
+                    date: date,
+                    startTime: null,
+                    endTime: null,
+                    leaveType: 'NONE',
+                    remark: null
+                };
+
+                const response = await fetch('/api/workhours/attendance/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 清空成功，刷新页面数据
+                    alert('✅ 数据已清空');
+                    loadExcelData(); // 重新加载数据
+                } else {
+                    alert(`❌ 清空失败: ${data.message}`);
+                }
+            } catch (error) {
+                console.error('清空数据异常:', error);
+                alert(`❌ 清空失败: ${error.message}`);
+            }
         }
 
     </script>

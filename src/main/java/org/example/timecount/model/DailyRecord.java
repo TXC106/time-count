@@ -55,7 +55,7 @@ public class DailyRecord {
     private double leaveHours;
     
     /**
-     * 请假类型：MORNING(上午)、AFTERNOON(下午)、FULL_DAY(全天)、NONE(无)
+     * 请假类型：MORNING(上午)、AFTERNOON(下午)、FULL_DAY(全天)、LATE(迟到)、NONE(无)
      */
     private LeaveType leaveType;
     
@@ -76,7 +76,8 @@ public class DailyRecord {
         NONE("无"),
         MORNING("上午"),
         AFTERNOON("下午"),
-        FULL_DAY("全天");
+        FULL_DAY("全天"),
+        LATE("迟到");
         
         private final String description;
         

@@ -64,39 +64,48 @@ public class AttendanceService {
                 throw new IOException("未找到日期为 " + request.getDate() + " 的记录");
             }
 
-            // 更新上班时间和下班时间
+            // 更新上班时间（第3列）
+            Cell startTimeCell = targetRow.getCell(2);
+            if (startTimeCell == null) {
+                startTimeCell = targetRow.createCell(2);
+            }
             if (request.getStartTime() != null && !request.getStartTime().trim().isEmpty()) {
-                Cell startTimeCell = targetRow.getCell(2);
-                if (startTimeCell == null) {
-                    startTimeCell = targetRow.createCell(2);
-                }
                 startTimeCell.setCellValue(request.getStartTime());
+            } else {
+                startTimeCell.setBlank(); // 清空单元格
             }
 
+            // 更新下班时间（第4列）
+            Cell endTimeCell = targetRow.getCell(3);
+            if (endTimeCell == null) {
+                endTimeCell = targetRow.createCell(3);
+            }
             if (request.getEndTime() != null && !request.getEndTime().trim().isEmpty()) {
-                Cell endTimeCell = targetRow.getCell(3);
-                if (endTimeCell == null) {
-                    endTimeCell = targetRow.createCell(3);
-                }
                 endTimeCell.setCellValue(request.getEndTime());
+            } else {
+                endTimeCell.setBlank(); // 清空单元格
             }
 
-            // 更新请假类型（存储在备注列，假设为第5列）
+            // 更新请假类型（第5列）
+            Cell leaveTypeCell = targetRow.getCell(4);
+            if (leaveTypeCell == null) {
+                leaveTypeCell = targetRow.createCell(4);
+            }
             if (request.getLeaveType() != null && request.getLeaveType() != DailyRecord.LeaveType.NONE) {
-                Cell leaveTypeCell = targetRow.getCell(4);
-                if (leaveTypeCell == null) {
-                    leaveTypeCell = targetRow.createCell(4);
-                }
                 leaveTypeCell.setCellValue(request.getLeaveType().getDescription());
+            } else {
+                leaveTypeCell.setBlank(); // 清空单元格
             }
 
-            // 更新备注（假设为第6列）
+            // 更新备注（第6列）
+            Cell remarkCell = targetRow.getCell(5);
+            if (remarkCell == null) {
+                remarkCell = targetRow.createCell(5);
+            }
             if (request.getRemark() != null && !request.getRemark().trim().isEmpty()) {
-                Cell remarkCell = targetRow.getCell(5);
-                if (remarkCell == null) {
-                    remarkCell = targetRow.createCell(5);
-                }
                 remarkCell.setCellValue(request.getRemark());
+            } else {
+                remarkCell.setBlank(); // 清空单元格
             }
 
             // 保存文件

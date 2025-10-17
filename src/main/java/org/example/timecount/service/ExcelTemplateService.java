@@ -94,7 +94,7 @@ public class ExcelTemplateService {
         sheet.setColumnWidth(1, 2500);  // 星期
         sheet.setColumnWidth(2, 3000);  // 上班时间
         sheet.setColumnWidth(3, 3000);  // 下班时间
-        sheet.setColumnWidth(4, 3000);  // 请假类型
+        sheet.setColumnWidth(4, 3500);  // 请假类型
         sheet.setColumnWidth(5, 5000);  // 备注
 
         // 填充每一天的行
