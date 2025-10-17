@@ -289,6 +289,9 @@ public class WorkHoursCalculationService {
 
     /**
      * 计算每日工时
+     * 新规则：出勤时长 = 下班卡 - 上班卡 - 用餐时间
+     * - 19点前打下班卡，扣减1小时用餐时间
+     * - 19点及之后打下班卡，扣减1.5小时用餐时间（1小时午餐 + 0.5小时晚餐）
      */
     private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, DailyRecord.LeaveType leaveType) {
         if (startTime == null || endTime == null) {
@@ -301,21 +304,25 @@ public class WorkHoursCalculationService {
         
         log.debug("  原始时长: {} - {} = {} 小时", endTime, startTime, String.format("%.2f", totalHours));
 
-        // 判断是否需要扣除午休时间
-        // 如果是下午请假，则不扣除午休时间
-        if (leaveType != DailyRecord.LeaveType.AFTERNOON) {
-            totalHours -= config.getLunchBreakHours();
-            log.debug("  扣除午休 {} 小时后: {} 小时", config.getLunchBreakHours(), String.format("%.2f", totalHours));
+        // 根据下班时间判断用餐时间扣减
+        LocalTime dinnerThreshold = LocalTime.of(config.getDinnerBreakThresholdHour(), 0); // 19:00
+        double mealTimeDeduction = 0.0;
+        
+        if (leaveType == DailyRecord.LeaveType.AFTERNOON) {
+            // 下午请假，不扣除用餐时间
+            log.debug("  下午请假，不扣除用餐时间");
+        } else if (endTime.isBefore(dinnerThreshold)) {
+            // 19点前打下班卡，扣减1小时用餐时间
+            mealTimeDeduction = 1.0;
+            totalHours -= mealTimeDeduction;
+            log.debug("  下班时间 {} 早于 19:00，扣除用餐时间 {} 小时后: {} 小时", 
+                    endTime, mealTimeDeduction, String.format("%.2f", totalHours));
         } else {
-            log.debug("  下午请假，不扣除午休时间");
-        }
-
-        // 如果下班时间晚于19:00，扣除晚餐时间
-        LocalTime dinnerThreshold = LocalTime.of(config.getDinnerBreakThresholdHour(), 0);
-        if (endTime.isAfter(dinnerThreshold)) {
-            totalHours -= config.getDinnerBreakHours();
-            log.debug("  下班晚于{}:00，扣除晚餐 {} 小时后: {} 小时", 
-                    config.getDinnerBreakThresholdHour(), config.getDinnerBreakHours(), String.format("%.2f", totalHours));
+            // 19点及之后打下班卡，扣减1.5小时用餐时间（1小时午餐 + 0.5小时晚餐）
+            mealTimeDeduction = 1.5;
+            totalHours -= mealTimeDeduction;
+            log.debug("  下班时间 {} 晚于或等于 19:00，扣除用餐时间 {} 小时后: {} 小时", 
+                    endTime, mealTimeDeduction, String.format("%.2f", totalHours));
         }
 
         double finalHours = Math.max(0, totalHours);
