@@ -86,21 +86,32 @@ public class AttendanceService {
                 endTimeCell.setBlank(); // 清空单元格
             }
 
-            // 更新请假类型（第5列）
-            Cell leaveTypeCell = targetRow.getCell(4);
-            if (leaveTypeCell == null) {
-                leaveTypeCell = targetRow.createCell(4);
+            // 更新请假开始时间（第5列）
+            Cell leaveStartCell = targetRow.getCell(4);
+            if (leaveStartCell == null) {
+                leaveStartCell = targetRow.createCell(4);
             }
-            if (request.getLeaveType() != null && request.getLeaveType() != DailyRecord.LeaveType.NONE) {
-                leaveTypeCell.setCellValue(request.getLeaveType().getDescription());
+            if (request.getLeaveStartTime() != null && !request.getLeaveStartTime().trim().isEmpty()) {
+                leaveStartCell.setCellValue(request.getLeaveStartTime());
             } else {
-                leaveTypeCell.setBlank(); // 清空单元格
+                leaveStartCell.setBlank(); // 清空单元格
             }
 
-            // 更新备注（第6列）
-            Cell remarkCell = targetRow.getCell(5);
+            // 更新请假结束时间（第6列）
+            Cell leaveEndCell = targetRow.getCell(5);
+            if (leaveEndCell == null) {
+                leaveEndCell = targetRow.createCell(5);
+            }
+            if (request.getLeaveEndTime() != null && !request.getLeaveEndTime().trim().isEmpty()) {
+                leaveEndCell.setCellValue(request.getLeaveEndTime());
+            } else {
+                leaveEndCell.setBlank(); // 清空单元格
+            }
+
+            // 更新备注（第7列）
+            Cell remarkCell = targetRow.getCell(6);
             if (remarkCell == null) {
-                remarkCell = targetRow.createCell(5);
+                remarkCell = targetRow.createCell(6);
             }
             if (request.getRemark() != null && !request.getRemark().trim().isEmpty()) {
                 remarkCell.setCellValue(request.getRemark());

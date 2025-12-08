@@ -339,10 +339,10 @@
                 if (isLeave && !isHoliday) {
                     const leaveTag = document.createElement('div');
                     leaveTag.className = 'text-xs bg-yellow-500 text-white px-2 py-1 rounded mb-1 font-semibold';
-                    const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天' :
-                                         record.leaveType === 'MORNING' ? '上午' :
-                                         record.leaveType === 'AFTERNOON' ? '下午' : '';
-                    leaveTag.textContent = `🏖️ 请假${leaveTypeText ? '('+leaveTypeText+')' : ''}`;
+                    const leaveTimeText = record.leaveStartTime && record.leaveEndTime 
+                        ? `${record.leaveStartTime}~${record.leaveEndTime}` 
+                        : '';
+                    leaveTag.textContent = `🏖️ 请假${leaveTimeText ? '('+leaveTimeText+')' : ''}`;
                     div.appendChild(leaveTag);
                 }
                 
@@ -439,10 +439,9 @@
             
             if (record.leave || record.isLeave) {
                 details += `\n🏖️ 请假信息：\n`;
-                const leaveTypeText = record.leaveType === 'FULL_DAY' ? '全天请假' :
-                                     record.leaveType === 'MORNING' ? '上午请假' :
-                                     record.leaveType === 'AFTERNOON' ? '下午请假' : '请假';
-                details += `   类型: ${leaveTypeText}\n`;
+                if (record.leaveStartTime && record.leaveEndTime) {
+                    details += `   时间段: ${record.leaveStartTime} ~ ${record.leaveEndTime}\n`;
+                }
                 details += `   时长: ${record.leaveHours.toFixed(2)} 小时\n`;
             }
             

@@ -30,9 +30,14 @@ public class AttendanceRequest {
     private String endTime;
     
     /**
-     * 请假类型：MORNING、AFTERNOON、FULL_DAY、LATE、NONE
+     * 请假开始时间，格式：HH:mm
      */
-    private DailyRecord.LeaveType leaveType;
+    private String leaveStartTime;
+    
+    /**
+     * 请假结束时间，格式：HH:mm
+     */
+    private String leaveEndTime;
     
     /**
      * 备注

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.timecount.config.WorkHoursConfig;
 import org.example.timecount.model.AttendanceRequest;
+import org.example.timecount.model.DailyRecord;
 import org.example.timecount.model.WorkHoursConfigRequest;
 import org.example.timecount.model.WorkHoursStatistics;
 import org.example.timecount.service.AttendanceService;
@@ -118,9 +119,10 @@ public class WorkHoursController {
             WorkHoursStatistics statistics = calculationService.calculateWorkHours(yearMonth);
 
             StringBuilder report = new StringBuilder();
-            report.append("=".repeat(60)).append("\n");
+            String separator = repeatString("=", 60);
+            report.append(separator).append("\n");
             report.append(String.format("           %s 工时统计报告\n", statistics.getYearMonth()));
-            report.append("=".repeat(60)).append("\n\n");
+            report.append(separator).append("\n\n");
 
             report.append("【出勤统计】\n");
             report.append(String.format("  当月总工时：%.2f 小时\n", statistics.getTotalWorkHours()));
@@ -148,34 +150,34 @@ public class WorkHoursController {
                 // 显示请假详情
                 report.append("  请假明细：\n");
                 if (statistics.getLeaveRecords() != null && !statistics.getLeaveRecords().isEmpty()) {
-                    for (var leaveRecord : statistics.getLeaveRecords()) {
-                        String leaveTypeStr = "";
-                        if (leaveRecord.getLeaveType() != null) {
-                            leaveTypeStr = String.format(" [%s]", leaveRecord.getLeaveType().getDescription());
+                    for (DailyRecord leaveRecord : statistics.getLeaveRecords()) {
+                        String leaveTimeStr = "";
+                        if (leaveRecord.getLeaveStartTime() != null && leaveRecord.getLeaveEndTime() != null) {
+                            leaveTimeStr = String.format(" [%s~%s]", 
+                                    leaveRecord.getLeaveStartTime(), 
+                                    leaveRecord.getLeaveEndTime());
                         }
                         
-                        String timeStr = "";
+                        String workTimeStr = "";
                         if (leaveRecord.getStartTime() != null || leaveRecord.getEndTime() != null) {
                             String start = leaveRecord.getStartTime() != null ? 
                                     leaveRecord.getStartTime().toString() : "未打卡";
                             String end = leaveRecord.getEndTime() != null ? 
                                     leaveRecord.getEndTime().toString() : "未打卡";
-                            timeStr = String.format(" (%s ~ %s)", start, end);
-                        } else {
-                            timeStr = " (全天未打卡)";
+                            workTimeStr = String.format(" (打卡: %s~%s)", start, end);
                         }
                         
                         report.append(String.format("    - %s%s%s: %.2f 小时\n", 
                                 leaveRecord.getDate(), 
-                                leaveTypeStr,
-                                timeStr,
+                                leaveTimeStr,
+                                workTimeStr,
                                 leaveRecord.getLeaveHours()));
                     }
                 }
                 report.append("\n");
             }
 
-            report.append("=".repeat(60)).append("\n");
+            report.append(separator).append("\n");
 
             log.info("生成工时报告: {}", yearMonth);
             return ResponseEntity.ok(report.toString());
@@ -211,15 +213,16 @@ public class WorkHoursController {
 
             WorkHoursStatistics statistics = calculationService.calculateWorkHours(yearMonth);
 
+            Map<String, Object> summary = new HashMap<>();
+            summary.put("totalWorkHours", statistics.getTotalWorkHours());
+            summary.put("attendanceDays", statistics.getAttendanceDays());
+            summary.put("averageWorkHours", statistics.getAverageWorkHoursPerDay());
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("yearMonth", yearMonth);
             response.put("dailyRecords", statistics.getDailyRecords());
-            response.put("summary", Map.of(
-                "totalWorkHours", statistics.getTotalWorkHours(),
-                "attendanceDays", statistics.getAttendanceDays(),
-                "averageWorkHours", statistics.getAverageWorkHoursPerDay()
-            ));
+            response.put("summary", summary);
 
             return ResponseEntity.ok(response);
 
@@ -359,5 +362,16 @@ public class WorkHoursController {
             response.put("message", "获取数据失败: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
+    }
+    
+    /**
+     * 重复字符串（兼容 Java 11 之前的版本）
+     */
+    private String repeatString(String str, int count) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
     }
 }

@@ -102,18 +102,34 @@
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        请假类型
+                        请假开始时间
                     </label>
-                    <select 
-                        id="leaveType" 
+                    <input 
+                        type="time" 
+                        id="leaveStartTime" 
+                        placeholder="如有请假，请选择开始时间"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
                     >
-                        <option value="NONE">正常出勤</option>
-                        <option value="MORNING">上午请假</option>
-                        <option value="AFTERNOON">下午请假</option>
-                        <option value="FULL_DAY">全天请假</option>
-                        <option value="LATE">迟到（9-10点）</option>
-                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        请假结束时间
+                    </label>
+                    <input 
+                        type="time" 
+                        id="leaveEndTime" 
+                        placeholder="如有请假，请选择结束时间"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                    >
+                </div>
+                
+                <!-- 用餐时间预览 -->
+                <div id="mealPreview" class="hidden">
+                    <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded">
+                        <p class="text-blue-800 font-medium mb-2">🍴 用餐时间预览</p>
+                        <div id="mealPreviewContent" class="text-sm text-blue-700"></div>
+                    </div>
                 </div>
                 
                 <div>
@@ -154,11 +170,9 @@
                         <strong>🏖️ 请假说明：</strong>
                     </p>
                     <ul class="mt-2 space-y-1 text-sm text-orange-700 ml-4">
-                        <li>• <strong>全天请假：</strong>不填上下班时间</li>
-                        <li>• <strong>上午请假：</strong>只填下班时间</li>
-                        <li>• <strong>下午请假：</strong>只填上班时间</li>
-                        <li>• <strong>迟到：</strong>9点后10点前上班，选择"迟到"不扣请假时长</li>
-                        <li>• <strong>自动判断：</strong>系统会根据打卡时间自动计算请假时长</li>
+                        <li>• <strong>请假时间段：</strong>填写请假开始和结束时间，系统会自动计算请假时长</li>
+                        <li>• <strong>上午请假：</strong>09:00-12:00，<strong>下午请假：</strong>13:00-18:00</li>
+                        <li>• <strong>用餐时间：</strong>填写上下班时间后，系统会预览将扣除的用餐时间</li>
                     </ul>
                 </div>
             </div>
@@ -174,6 +188,12 @@
         // 设置当前日期为默认值
         const currentDate = new Date().toISOString().slice(0, 10);
         document.getElementById('attendanceDate').value = currentDate;
+        
+        // 监听时间输入变化，实时预览用餐时间
+        document.getElementById('attendanceStartTime').addEventListener('input', updateMealPreview);
+        document.getElementById('attendanceEndTime').addEventListener('input', updateMealPreview);
+        document.getElementById('leaveStartTime').addEventListener('input', updateMealPreview);
+        document.getElementById('leaveEndTime').addEventListener('input', updateMealPreview);
         
         // 从URL参数中获取预填数据
         const urlParams = new URLSearchParams(window.location.search);
@@ -196,19 +216,14 @@
             const date = document.getElementById('attendanceDate').value;
             const startTime = document.getElementById('attendanceStartTime').value;
             const endTime = document.getElementById('attendanceEndTime').value;
-            const leaveType = document.getElementById('leaveType').value;
+            const leaveStartTime = document.getElementById('leaveStartTime').value;
+            const leaveEndTime = document.getElementById('leaveEndTime').value;
             const remark = document.getElementById('attendanceRemark').value;
             const resultDiv = document.getElementById('attendanceResult');
             const btn = document.getElementById('attendanceBtn');
             
             if (!date) {
                 showMessage(resultDiv, '请选择日期', 'error');
-                return;
-            }
-
-            // 如果不是全天请假，至少需要填写一个时间
-            if (leaveType !== 'FULL_DAY' && !startTime && !endTime) {
-                showMessage(resultDiv, '请至少填写上班或下班时间', 'error');
                 return;
             }
 
@@ -219,7 +234,8 @@
                     date: date,
                     startTime: startTime || null,
                     endTime: endTime || null,
-                    leaveType: leaveType,
+                    leaveStartTime: leaveStartTime || null,
+                    leaveEndTime: leaveEndTime || null,
                     remark: remark || null
                 };
 
@@ -238,8 +254,10 @@
                     // 清空表单
                     document.getElementById('attendanceStartTime').value = '';
                     document.getElementById('attendanceEndTime').value = '';
-                    document.getElementById('leaveType').value = 'NONE';
+                    document.getElementById('leaveStartTime').value = '';
+                    document.getElementById('leaveEndTime').value = '';
                     document.getElementById('attendanceRemark').value = '';
+                    updateMealPreview();
                 } else {
                     showMessage(resultDiv, `❌ ${data.message}`, 'error');
                 }
@@ -250,6 +268,70 @@
             }
         }
 
+        // 更新用餐时间预览
+        function updateMealPreview() {
+            const startTime = document.getElementById('attendanceStartTime').value;
+            const endTime = document.getElementById('attendanceEndTime').value;
+            const leaveStartTime = document.getElementById('leaveStartTime').value;
+            const leaveEndTime = document.getElementById('leaveEndTime').value;
+            const previewDiv = document.getElementById('mealPreview');
+            const contentDiv = document.getElementById('mealPreviewContent');
+            
+            if (!startTime || !endTime) {
+                previewDiv.classList.add('hidden');
+                return;
+            }
+            
+            // 计算用餐时间扣除
+            let mealDeduction = 0;
+            let explanation = '';
+            
+            const endHour = parseInt(endTime.split(':')[0]);
+            
+            // 判断是否下午请假（请假时间包含13:00-18:00）
+            let isAfternoonLeave = false;
+            if (leaveStartTime && leaveEndTime) {
+                const leaveStart = parseInt(leaveStartTime.split(':')[0]) * 60 + parseInt(leaveStartTime.split(':')[1]);
+                const leaveEnd = parseInt(leaveEndTime.split(':')[0]) * 60 + parseInt(leaveEndTime.split(':')[1]);
+                const afternoonStart = 13 * 60; // 13:00
+                const afternoonEnd = 18 * 60;   // 18:00
+                
+                // 请假时间包含下午时段
+                if (leaveStart < afternoonEnd && leaveEnd > afternoonStart) {
+                    isAfternoonLeave = true;
+                }
+            }
+            
+            if (isAfternoonLeave) {
+                // 下午请假，不扣除用餐时间
+                explanation = `🟢 下午请假（${leaveStartTime}~${leaveEndTime}），<strong>不扣除用餐时间</strong>`;
+            } else if (endHour < 19) {
+                // 19点前打下班卡，扣减1小时用餐时间
+                mealDeduction = 1.0;
+                explanation = `🟡 下班时间 <strong>${endTime}</strong> 早于19:00，将扣除 <strong>1小时</strong> 用餐时间（午餐）`;
+            } else {
+                // 19点及之后打下班卡，扣减1.5小时用餐时间
+                mealDeduction = 1.5;
+                explanation = `🔴 下班时间 <strong>${endTime}</strong> 晚于或19:00，将扣除 <strong>1.5小时</strong> 用餐时间（1小时午餐 + 0.5小时晚餐）`;
+            }
+            
+            // 计算实际工时
+            const start = new Date(`2000-01-01 ${startTime}`);
+            const end = new Date(`2000-01-01 ${endTime}`);
+            const totalHours = (end - start) / (1000 * 60 * 60);
+            const workHours = Math.max(0, totalHours - mealDeduction);
+            
+            contentDiv.innerHTML = `
+                <div>${explanation}</div>
+                <div class="mt-2">
+                    <span class="font-semibold">实际工时：</span>
+                    ${totalHours.toFixed(2)}小时 - ${mealDeduction}小时 = <strong class="text-lg">${workHours.toFixed(2)}小时</strong>
+                </div>
+            `;
+            
+            previewDiv.classList.remove('hidden');
+        }
+        
         // 显示消息
         function showMessage(element, message, type) {
             const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800';

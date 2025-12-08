@@ -50,14 +50,19 @@ public class DailyRecord {
     private boolean isLeave;
     
     /**
-     * 请假时长（小时）
+     * 请假开始时间
      */
-    private double leaveHours;
+    private LocalTime leaveStartTime;
     
     /**
-     * 请假类型：MORNING(上午)、AFTERNOON(下午)、FULL_DAY(全天)、LATE(迟到)、NONE(无)
+     * 请假结束时间
      */
-    private LeaveType leaveType;
+    private LocalTime leaveEndTime;
+    
+    /**
+     * 请假时长（小时）- 根据请假时间段自动计算
+     */
+    private double leaveHours;
     
     /**
      * 备注
@@ -69,24 +74,4 @@ public class DailyRecord {
      */
     private boolean isHoliday;
     
-    /**
-     * 请假类型枚举
-     */
-    public enum LeaveType {
-        NONE("无"),
-        MORNING("上午"),
-        AFTERNOON("下午"),
-        FULL_DAY("全天"),
-        LATE("迟到");
-        
-        private final String description;
-        
-        LeaveType(String description) {
-            this.description = description;
-        }
-        
-        public String getDescription() {
-            return description;
-        }
-    }
 }
