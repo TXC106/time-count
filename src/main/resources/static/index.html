@@ -239,10 +239,11 @@
                                     <tr>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">日期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">星期</th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间<span class="text-xs text-gray-500 ml-1">(勾选+1表示次日)</span></th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间<span class="text-xs text-gray-500 ml-1">(勾选+1表示次日)</span></th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假开始时间</th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假结束时间</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假类型</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">自定义开始</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">自定义结束</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">工时</th>
                                         <th class="px-4 py-3 border-b text-center text-sm font-semibold text-gray-700">操作</th>
                                     </tr>
@@ -654,38 +655,22 @@
                 const isToday = record.date === today;
                 const rowClass = isToday ? 'bg-cyan-100' : (isWeekend ? 'bg-gray-50' : '');
                 
-                // 解析上班时间，分离时间和次日标记
-                const startTimeStr = record.startTime || '';
-                const isStartNextDay = startTimeStr.includes('+1');
-                const startTimeValue = startTimeStr.replace('+1', '').trim();
-                
-                // 解析下班时间，分离时间和次日标记
-                const endTimeStr = record.endTime || '';
-                const isEndNextDay = endTimeStr.includes('+1');
-                const endTimeValue = endTimeStr.replace('+1', '').trim();
+                // 解析下班时间，使用endTimeRaw字段（包含+1标记）
+                const endTimeRaw = record.endTimeRaw || record.endTime || '';
+                const isEndNextDay = endTimeRaw.includes('+1');
+                const endTimeValue = endTimeRaw.replace('+1', '').trim();
 
                 return `
                     <tr class="${rowClass} hover:bg-blue-50 transition-colors" data-date="${record.date}" id="row-${record.date}">
                         <td class="px-4 py-3 border-b text-sm font-medium">${record.date}${isToday ? ' <span class="text-xs text-cyan-600 font-bold">今天</span>' : ''}</td>
                         <td class="px-4 py-3 border-b text-sm">${record.dayOfWeek}</td>
                         <td class="px-4 py-3 border-b text-sm">
-                            <div class="flex items-center gap-1">
-                                <input
-                                    type="time"
-                                    value="${startTimeValue}"
-                                    onchange="updateAttendance('${record.date}', 'startTime', this.value, event)"
-                                    class="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                                >
-                                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap text-xs">
-                                    <input
-                                        type="checkbox"
-                                        ${isStartNextDay ? 'checked' : ''}
-                                        onchange="updateAttendance('${record.date}', 'startTimeNextDay', this.checked, event)"
-                                        class="w-4 h-4 text-cyan-600"
-                                    >
-                                    <span>+1</span>
-                                </label>
-                            </div>
+                            <input
+                                type="time"
+                                value="${record.startTime || ''}"
+                                onchange="updateAttendance('${record.date}', 'startTime', this.value, event)"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                            >
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
                             <div class="flex items-center gap-1">
@@ -707,11 +692,25 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
+                            <select
+                                onchange="updateAttendance('${record.date}', 'leaveType', this.value, event)"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-sm"
+                                data-date="${record.date}"
+                            >
+                                <option value="\u6b63\u5e38" ${(!record.leaveType || record.leaveType === 'NONE' || record.leaveType === '\u6b63\u5e38') ? 'selected' : ''}>\u6b63\u5e38</option>
+                                <option value="\u4e0a\u5348\u8bf7\u5047" ${record.leaveType === 'MORNING' || record.leaveType === '\u4e0a\u5348\u8bf7\u5047' ? 'selected' : ''}>\u4e0a\u5348\u8bf7\u5047</option>
+                                <option value="\u4e0b\u5348\u8bf7\u5047" ${record.leaveType === 'AFTERNOON' || record.leaveType === '\u4e0b\u5348\u8bf7\u5047' ? 'selected' : ''}>\u4e0b\u5348\u8bf7\u5047</option>
+                                <option value="\u5168\u5929\u8bf7\u5047" ${record.leaveType === 'FULL_DAY' || record.leaveType === '\u5168\u5929\u8bf7\u5047' ? 'selected' : ''}>\u5168\u5929\u8bf7\u5047</option>
+                                <option value="\u81ea\u5b9a\u4e49\u65f6\u95f4\u6bb5" ${record.leaveType === 'CUSTOM' || record.leaveType === '\u81ea\u5b9a\u4e49\u65f6\u95f4\u6bb5' ? 'selected' : ''}>\u81ea\u5b9a\u4e49\u65f6\u95f4\u6bb5</option>
+                            </select>
+                        </td>
+                        <td class="px-4 py-3 border-b text-sm">
                             <input
                                 type="time"
                                 value="${record.leaveStartTime || ''}"
                                 onchange="updateAttendance('${record.date}', 'leaveStartTime', this.value, event)"
                                 class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                ${(record.leaveType !== 'CUSTOM' && record.leaveType !== '\u81ea\u5b9a\u4e49\u65f6\u95f4\u6bb5') ? 'disabled style="background-color: #f3f4f6;"' : ''}
                             >
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
@@ -720,13 +719,14 @@
                                 value="${record.leaveEndTime || ''}"
                                 onchange="updateAttendance('${record.date}', 'leaveEndTime', this.value, event)"
                                 class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                ${(record.leaveType !== 'CUSTOM' && record.leaveType !== '\u81ea\u5b9a\u4e49\u65f6\u95f4\u6bb5') ? 'disabled style="background-color: #f3f4f6;"' : ''}
                             >
                         </td>
                         <td class="px-4 py-3 border-b text-sm font-semibold text-center">${record.workHours > 0 ? record.workHours.toFixed(2) : '-'}</td>
                         <td class="px-4 py-3 border-b text-center">
                             <button
                                 onclick="clearDayData('${record.date}')"
-                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
+                                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors whitespace-nowrap"
                                 title="清空该日数据"
                             >
                                 🗑️ 清空
@@ -748,10 +748,28 @@
         // 更新考勤数据
         let updateTimeout = null;
         async function updateAttendance(date, field, value, evt) {
-            // 如果只是复选框改变，不立即保存，只更新UI状态
-            if (field === 'startTimeNextDay' || field === 'endTimeNextDay') {
-                console.log('复选框状态已更新，等待时间输入时一起保存');
-                return;
+            // 如果是请假类型改变，立即更新UI
+            if (field === 'leaveType') {
+                const row = evt.target.closest('tr');
+                const timeInputs = row.querySelectorAll('input[type="time"]');
+                const leaveStartInput = timeInputs[2];
+                const leaveEndInput = timeInputs[3];
+                
+                // 根据请假类型启用/禁用自定义时间输入框
+                if (value === '自定义时间段') {
+                    leaveStartInput.disabled = false;
+                    leaveEndInput.disabled = false;
+                    leaveStartInput.style.backgroundColor = '';
+                    leaveEndInput.style.backgroundColor = '';
+                } else {
+                    leaveStartInput.disabled = true;
+                    leaveEndInput.disabled = true;
+                    leaveStartInput.style.backgroundColor = '#f3f4f6';
+                    leaveEndInput.style.backgroundColor = '#f3f4f6';
+                    // 清空自定义时间
+                    leaveStartInput.value = '';
+                    leaveEndInput.value = '';
+                }
             }
             
             // 清除之前的定时器
@@ -776,17 +794,12 @@
                     const leaveStartTimeInput = timeInputs[2];
                     const leaveEndTimeInput = timeInputs[3];
                     
-                    // 获取次日复选框
-                    const checkboxes = row.querySelectorAll('input[type="checkbox"]');
-                    const startTimeNextDayCheckbox = checkboxes[0];
-                    const endTimeNextDayCheckbox = checkboxes[1];
-
-                    // 组合上班时间和次日标记
-                    let startTime = startTimeInput?.value || null;
-                    if (startTime && startTimeNextDayCheckbox?.checked) {
-                        startTime = startTime + '+1';
-                    }
+                    // 获取请假类型下拉框
+                    const leaveTypeSelect = row.querySelector('select');
                     
+                    // 获取下班时间次日复选框
+                    const endTimeNextDayCheckbox = row.querySelector('input[type="checkbox"]');
+
                     // 组合下班时间和次日标记
                     let endTime = endTimeInput?.value || null;
                     if (endTime && endTimeNextDayCheckbox?.checked) {
@@ -797,18 +810,19 @@
                     console.log('保存数据:', {
                         date,
                         field,
-                        startTime: startTime,
-                        startTimeNextDay: startTimeNextDayCheckbox?.checked,
+                        startTime: startTimeInput?.value,
                         endTime: endTime,
                         endTimeNextDay: endTimeNextDayCheckbox?.checked,
+                        leaveType: leaveTypeSelect?.value,
                         leaveStartTime: leaveStartTimeInput?.value,
                         leaveEndTime: leaveEndTimeInput?.value
                     });
 
                     const requestBody = {
                         date: date,
-                        startTime: startTime,
+                        startTime: startTimeInput?.value || null,
                         endTime: endTime,
+                        leaveType: leaveTypeSelect?.value || '正常',
                         leaveStartTime: leaveStartTimeInput?.value || null,
                         leaveEndTime: leaveEndTimeInput?.value || null,
                         remark: null
@@ -857,7 +871,7 @@
                     const record = data.data.find(r => r.date === date);
                     if (record) {
                         // 只更新工时列
-                        const workHoursCell = row.querySelector('td:nth-child(7)'); // 第7列是工时
+                        const workHoursCell = row.querySelector('td:nth-child(8)'); // 第8列是工时
                         if (workHoursCell) {
                             workHoursCell.textContent = record.workHours > 0 ? record.workHours.toFixed(2) : '-';
                         }
@@ -871,7 +885,7 @@
 
         // 清空某日数据
         async function clearDayData(date) {
-            if (!confirm(`确定要清空 ${date} 的所有数据吗？\n\n此操作将清空该日的：\n• 上班时间\n• 下班时间\n• 请假开始时间\n• 请假结束时间`)) {
+            if (!confirm(`确定要清空 ${date} 的所有数据吗？\n\n此操作将清空该日的：\n• 上班时间\n• 下班时间\n• 请假类型（重置为正常）\n• 请假自定义时间`)) {
                 return;
             }
 
@@ -880,6 +894,7 @@
                     date: date,
                     startTime: null,
                     endTime: null,
+                    leaveType: '正常',
                     leaveStartTime: null,
                     leaveEndTime: null,
                     remark: null

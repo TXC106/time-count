@@ -82,7 +82,7 @@ public class ExcelTemplateService {
 
         // 创建表头
         Row headerRow = sheet.createRow(0);
-        String[] headers = {"日期", "星期", "上班时间", "下班时间", "请假开始时间", "请假结束时间", "备注"};
+        String[] headers = {"日期", "星期", "上班时间", "下班时间", "请假类型", "请假开始时间", "请假结束时间", "备注"};
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(headers[i]);
@@ -94,9 +94,10 @@ public class ExcelTemplateService {
         sheet.setColumnWidth(1, 2500);  // 星期
         sheet.setColumnWidth(2, 3000);  // 上班时间
         sheet.setColumnWidth(3, 3000);  // 下班时间
-        sheet.setColumnWidth(4, 3000);  // 请假开始时间
-        sheet.setColumnWidth(5, 3000);  // 请假结束时间
-        sheet.setColumnWidth(6, 5000);  // 备注
+        sheet.setColumnWidth(4, 3500);  // 请假类型
+        sheet.setColumnWidth(5, 3000);  // 请假开始时间
+        sheet.setColumnWidth(6, 3000);  // 请假结束时间
+        sheet.setColumnWidth(7, 6000);  // 备注
 
         // 填充每一天的行
         int daysInMonth = yearMonth.lengthOfMonth();
@@ -124,16 +125,21 @@ public class ExcelTemplateService {
             Cell endTimeCell = row.createCell(3);
             endTimeCell.setCellStyle(timeStyle);
 
-            // 请假类型列（空白）
+            // 请假类型列（默认为"正常"）
             Cell leaveTypeCell = row.createCell(4);
+            leaveTypeCell.setCellValue("正常");
             leaveTypeCell.setCellStyle(timeStyle);
 
-            // 请假时长列（空白）
-            Cell leaveHoursCell = row.createCell(5);
-            leaveHoursCell.setCellStyle(timeStyle);
+            // 请假开始时间列（空白）
+            Cell leaveStartCell = row.createCell(5);
+            leaveStartCell.setCellStyle(timeStyle);
 
-            // 备注列
-            Cell remarkCell = row.createCell(6);
+            // 请假结束时间列（空白）
+            Cell leaveEndCell = row.createCell(6);
+            leaveEndCell.setCellStyle(timeStyle);
+
+            // 备注列（空白）
+            Cell remarkCell = row.createCell(7);
             remarkCell.setCellStyle(timeStyle);
         }
     }
