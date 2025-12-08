@@ -240,7 +240,7 @@
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">日期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">星期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间</th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间<span class="text-xs text-gray-500 ml-1">(次日加+1)</span></th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间<span class="text-xs text-gray-500 ml-1">(勾选+1表示次日)</span></th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假开始时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假结束时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">工时</th>
@@ -647,6 +647,11 @@
                 const isWeekend = !record.workday;
                 const isToday = record.date === today;
                 const rowClass = isToday ? 'bg-cyan-100' : (isWeekend ? 'bg-gray-50' : '');
+                
+                // 解析下班时间，分离时间和次日标记
+                const endTimeStr = record.endTime || '';
+                const isNextDay = endTimeStr.includes('+1');
+                const endTimeValue = endTimeStr.replace('+1', '').trim();
 
                 return `
                     <tr class="${rowClass} hover:bg-blue-50 transition-colors" data-date="${record.date}" id="row-${record.date}">
@@ -661,13 +666,23 @@
                             >
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
-                            <input
-                                type="text"
-                                value="${record.endTime || ''}"
-                                onchange="updateAttendance('${record.date}', 'endTime', this.value, event)"
-                                placeholder="HH:mm 或 HH:mm+1"
-                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-center"
-                            >
+                            <div class="flex items-center gap-1">
+                                <input
+                                    type="time"
+                                    value="${endTimeValue}"
+                                    onchange="updateAttendance('${record.date}', 'endTime', this.value, event)"
+                                    class="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                >
+                                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap text-xs">
+                                    <input
+                                        type="checkbox"
+                                        ${isNextDay ? 'checked' : ''}
+                                        onchange="updateAttendance('${record.date}', 'endTimeNextDay', this.checked, event)"
+                                        class="w-4 h-4 text-cyan-600"
+                                    >
+                                    <span>+1</span>
+                                </label>
+                            </div>
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
                             <input
@@ -732,12 +747,22 @@
                     const endTimeInput = timeInputs[1];
                     const leaveStartTimeInput = timeInputs[2];
                     const leaveEndTimeInput = timeInputs[3];
+                    
+                    // 获取次日复选框
+                    const endTimeNextDayCheckbox = row.querySelector('input[type="checkbox"]');
+
+                    // 组合下班时间和次日标记
+                    let endTime = endTimeInput?.value || null;
+                    if (endTime && endTimeNextDayCheckbox?.checked) {
+                        endTime = endTime + '+1';
+                    }
 
                     // 调试日志
                     console.log('保存数据:', {
                         date,
                         startTime: startTimeInput?.value,
-                        endTime: endTimeInput?.value,
+                        endTime: endTime,
+                        endTimeNextDay: endTimeNextDayCheckbox?.checked,
                         leaveStartTime: leaveStartTimeInput?.value,
                         leaveEndTime: leaveEndTimeInput?.value
                     });
@@ -745,7 +770,7 @@
                     const requestBody = {
                         date: date,
                         startTime: startTimeInput?.value || null,
-                        endTime: endTimeInput?.value || null,
+                        endTime: endTime,
                         leaveStartTime: leaveStartTimeInput?.value || null,
                         leaveEndTime: leaveEndTimeInput?.value || null,
                         remark: null
