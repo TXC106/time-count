@@ -242,12 +242,14 @@ public class WorkHoursCalculationService {
         switch (leaveType) {
             case MORNING:
                 // 上午请假，不扣除午休时间，但可能扣除晚餐
-                if (endTime.isBefore(dinnerThreshold)) {
+                // 跨天班次必定超过19点，扣除晚餐
+                if (isEndTimeNextDay || !endTime.isBefore(dinnerThreshold)) {
+                    mealTimeDeduction = 0.5; // 19点后下班或跨天，只扣晚餐
+                    log.debug("  上午请假，下班时间 {} {}，扣除晚餐 {} 小时", 
+                            endTime, isEndTimeNextDay ? "(次日)" : "晚于或等于 19:00", mealTimeDeduction);
+                } else {
                     mealTimeDeduction = 0.0; // 19点前下班，不扣除
                     log.debug("  上午请假，下班时间 {} 早于 19:00，不扣除用餐时间", endTime);
-                } else {
-                    mealTimeDeduction = 0.5; // 19点后下班，只扣晚餐
-                    log.debug("  上午请假，下班时间 {} 晚于或等于 19:00，扣除晚餐 {} 小时", endTime, mealTimeDeduction);
                 }
                 break;
                 
@@ -267,7 +269,11 @@ public class WorkHoursCalculationService {
             case NONE:
             default:
                 // 正常出勤或自定义请假，按下班时间判断
-                if (endTime.isBefore(lunchThreshold)) {
+                if (isEndTimeNextDay) {
+                    // 跨天班次：工作时间必定超过19点，扣除午休+晚餐
+                    mealTimeDeduction = 1.5;
+                    log.debug("  跨天班次，下班时间 {}(次日)，扣除午休+晚餐 {} 小时", endTime, mealTimeDeduction);
+                } else if (endTime.isBefore(lunchThreshold)) {
                     // 12点前下班，不扣午休（通常是夜班早晨下班）
                     mealTimeDeduction = 0.0;
                     log.debug("  下班时间 {} 早于 12:00，不扣除用餐时间", endTime);
