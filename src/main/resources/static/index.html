@@ -239,7 +239,7 @@
                                     <tr>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">日期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">星期</th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间<span class="text-xs text-gray-500 ml-1">(勾选+1表示次日)</span></th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间<span class="text-xs text-gray-500 ml-1">(勾选+1表示次日)</span></th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假开始时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假结束时间</th>
@@ -654,9 +654,14 @@
                 const isToday = record.date === today;
                 const rowClass = isToday ? 'bg-cyan-100' : (isWeekend ? 'bg-gray-50' : '');
                 
+                // 解析上班时间，分离时间和次日标记
+                const startTimeStr = record.startTime || '';
+                const isStartNextDay = startTimeStr.includes('+1');
+                const startTimeValue = startTimeStr.replace('+1', '').trim();
+                
                 // 解析下班时间，分离时间和次日标记
                 const endTimeStr = record.endTime || '';
-                const isNextDay = endTimeStr.includes('+1');
+                const isEndNextDay = endTimeStr.includes('+1');
                 const endTimeValue = endTimeStr.replace('+1', '').trim();
 
                 return `
@@ -664,12 +669,23 @@
                         <td class="px-4 py-3 border-b text-sm font-medium">${record.date}${isToday ? ' <span class="text-xs text-cyan-600 font-bold">今天</span>' : ''}</td>
                         <td class="px-4 py-3 border-b text-sm">${record.dayOfWeek}</td>
                         <td class="px-4 py-3 border-b text-sm">
-                            <input
-                                type="time"
-                                value="${record.startTime || ''}"
-                                onchange="updateAttendance('${record.date}', 'startTime', this.value, event)"
-                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                            >
+                            <div class="flex items-center gap-1">
+                                <input
+                                    type="time"
+                                    value="${startTimeValue}"
+                                    onchange="updateAttendance('${record.date}', 'startTime', this.value, event)"
+                                    class="flex-1 px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                >
+                                <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap text-xs">
+                                    <input
+                                        type="checkbox"
+                                        ${isStartNextDay ? 'checked' : ''}
+                                        onchange="updateAttendance('${record.date}', 'startTimeNextDay', this.checked, event)"
+                                        class="w-4 h-4 text-cyan-600"
+                                    >
+                                    <span>+1</span>
+                                </label>
+                            </div>
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
                             <div class="flex items-center gap-1">
@@ -682,7 +698,7 @@
                                 <label class="flex items-center gap-1 cursor-pointer whitespace-nowrap text-xs">
                                     <input
                                         type="checkbox"
-                                        ${isNextDay ? 'checked' : ''}
+                                        ${isEndNextDay ? 'checked' : ''}
                                         onchange="updateAttendance('${record.date}', 'endTimeNextDay', this.checked, event)"
                                         class="w-4 h-4 text-cyan-600"
                                     >
@@ -733,7 +749,7 @@
         let updateTimeout = null;
         async function updateAttendance(date, field, value, evt) {
             // 如果只是复选框改变，不立即保存，只更新UI状态
-            if (field === 'endTimeNextDay') {
+            if (field === 'startTimeNextDay' || field === 'endTimeNextDay') {
                 console.log('复选框状态已更新，等待时间输入时一起保存');
                 return;
             }
@@ -761,8 +777,16 @@
                     const leaveEndTimeInput = timeInputs[3];
                     
                     // 获取次日复选框
-                    const endTimeNextDayCheckbox = row.querySelector('input[type="checkbox"]');
+                    const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+                    const startTimeNextDayCheckbox = checkboxes[0];
+                    const endTimeNextDayCheckbox = checkboxes[1];
 
+                    // 组合上班时间和次日标记
+                    let startTime = startTimeInput?.value || null;
+                    if (startTime && startTimeNextDayCheckbox?.checked) {
+                        startTime = startTime + '+1';
+                    }
+                    
                     // 组合下班时间和次日标记
                     let endTime = endTimeInput?.value || null;
                     if (endTime && endTimeNextDayCheckbox?.checked) {
@@ -773,7 +797,8 @@
                     console.log('保存数据:', {
                         date,
                         field,
-                        startTime: startTimeInput?.value,
+                        startTime: startTime,
+                        startTimeNextDay: startTimeNextDayCheckbox?.checked,
                         endTime: endTime,
                         endTimeNextDay: endTimeNextDayCheckbox?.checked,
                         leaveStartTime: leaveStartTimeInput?.value,
@@ -782,7 +807,7 @@
 
                     const requestBody = {
                         date: date,
-                        startTime: startTimeInput?.value || null,
+                        startTime: startTime,
                         endTime: endTime,
                         leaveStartTime: leaveStartTimeInput?.value || null,
                         leaveEndTime: leaveEndTimeInput?.value || null,

@@ -153,11 +153,20 @@ public class WorkHoursCalculationService {
 
             // 计算工时
             if (startTime != null && endTime != null) {
-                // 检查下班时间是否为次日
+                // 检查上班时间和下班时间是否为次日
+                boolean isStartTimeNextDay = isNextDay(startTimeStr);
                 boolean isEndTimeNextDay = isNextDay(endTimeStr);
-                double workHours = calculateDailyWorkHours(startTime, endTime, isEndTimeNextDay, leaveStartTime, leaveEndTime);
+                double workHours = calculateDailyWorkHours(startTime, endTime, isStartTimeNextDay, isEndTimeNextDay, leaveStartTime, leaveEndTime);
                 record.setWorkHours(workHours);
-                log.debug("日期 {} 计算工时: {} 小时{}", dateStr, workHours, isEndTimeNextDay ? "（跨天）" : "");
+                String crossDayInfo = "";
+                if (isStartTimeNextDay && isEndTimeNextDay) {
+                    crossDayInfo = "（上下班均为次日）";
+                } else if (isStartTimeNextDay) {
+                    crossDayInfo = "（上班为次日）";
+                } else if (isEndTimeNextDay) {
+                    crossDayInfo = "（下班为次日）";
+                }
+                log.debug("日期 {} 计算工时: {} 小时{}", dateStr, workHours, crossDayInfo);
             } else {
                 log.debug("日期 {} 上下班时间不完整，跳过工时计算", dateStr);
             }
@@ -181,23 +190,31 @@ public class WorkHoursCalculationService {
      * 3. 19点及之后打下班卡：扣减1.5小时用餐时间（午餐+晚餐）
      * 
      * 跨天支持：
-     * - 如果下班时间标记为次日（+1），则加24小时计算
+     * - 如果上班时间标记为次日（+1），则上班时间加24小时
+     * - 如果下班时间标记为次日（+1），则下班时间加24小时
      */
-    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, boolean isEndTimeNextDay,
+    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, 
+                                          boolean isStartTimeNextDay, boolean isEndTimeNextDay,
                                           LocalTime leaveStartTime, LocalTime leaveEndTime) {
         if (startTime == null || endTime == null) {
             return 0.0;
         }
 
         // 计算总工作时长（分钟）
-        long totalMinutes;
-        if (isEndTimeNextDay) {
-            // 跨天：加24小时
-            totalMinutes = Duration.between(startTime, endTime).toMinutes() + 24 * 60;
-            log.debug("  跨天计算: {} -> {}(次日)", startTime, endTime);
-        } else {
-            totalMinutes = Duration.between(startTime, endTime).toMinutes();
+        long totalMinutes = Duration.between(startTime, endTime).toMinutes();
+        
+        // 处理上班时间跨天
+        if (isStartTimeNextDay) {
+            totalMinutes -= 24 * 60; // 上班时间在次日，需要减去24小时
+            log.debug("  上班时间为次日: {}(次日)", startTime);
         }
+        
+        // 处理下班时间跨天
+        if (isEndTimeNextDay) {
+            totalMinutes += 24 * 60; // 下班时间在次日，需要加上24小时
+            log.debug("  下班时间为次日: {}(次日)", endTime);
+        }
+        
         double totalHours = totalMinutes / 60.0;
         
         log.debug("  原始时长: {} 小时", String.format("%.2f", totalHours));
