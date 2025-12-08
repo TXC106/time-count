@@ -375,6 +375,9 @@
         // 设置当前月份为默认值
         const currentMonth = new Date().toISOString().slice(0, 7);
         document.getElementById('templateMonth').value = currentMonth;
+        
+        // 全局变量：当前加载的Excel月份
+        let currentYearMonth = null;
         document.getElementById('calculateMonth').value = currentMonth;
 
         // 生成模板
@@ -640,6 +643,9 @@
         function displayExcelData(records, yearMonth) {
             const tbody = document.getElementById('excelTableBody');
             document.getElementById('excelEditorTitle').textContent = `${yearMonth} 考勤数据`;
+            
+            // 保存当前月份
+            currentYearMonth = yearMonth;
 
             const today = new Date().toISOString().slice(0, 10);
 
@@ -793,6 +799,9 @@
                             row.classList.remove('bg-green-50');
                         }, 1000);
                         console.log('保存成功');
+                        
+                        // 重新加载数据以保持状态同步
+                        await loadExcelData(currentYearMonth);
                     } else {
                         alert(`保存失败: ${data.message}`);
                         console.error('保存失败:', data.message);
