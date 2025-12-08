@@ -732,6 +732,12 @@
         // 更新考勤数据
         let updateTimeout = null;
         async function updateAttendance(date, field, value, evt) {
+            // 如果只是复选框改变，不立即保存，只更新UI状态
+            if (field === 'endTimeNextDay') {
+                console.log('复选框状态已更新，等待时间输入时一起保存');
+                return;
+            }
+            
             // 清除之前的定时器
             if (updateTimeout) {
                 clearTimeout(updateTimeout);
@@ -766,6 +772,7 @@
                     // 调试日志
                     console.log('保存数据:', {
                         date,
+                        field,
                         startTime: startTimeInput?.value,
                         endTime: endTime,
                         endTimeNextDay: endTimeNextDayCheckbox?.checked,
@@ -800,8 +807,8 @@
                         }, 1000);
                         console.log('保存成功');
                         
-                        // 重新加载数据以保持状态同步
-                        await loadExcelData(currentYearMonth);
+                        // 只刷新工时显示，不重新加载整个表格
+                        await refreshWorkHours(date, row);
                     } else {
                         alert(`保存失败: ${data.message}`);
                         console.error('保存失败:', data.message);
@@ -811,6 +818,30 @@
                     alert(`保存失败: ${error.message}`);
                 }
             }, 500); // 500ms后保存
+        }
+
+        // 刷新工时显示（不重新渲染整个表格）
+        async function refreshWorkHours(date, row) {
+            try {
+                // 重新获取该月份数据
+                const response = await fetch(`/api/workhours/excel/data?yearMonth=${currentYearMonth}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 找到对应日期的记录
+                    const record = data.data.find(r => r.date === date);
+                    if (record) {
+                        // 只更新工时列
+                        const workHoursCell = row.querySelector('td:nth-child(7)'); // 第7列是工时
+                        if (workHoursCell) {
+                            workHoursCell.textContent = record.workHours > 0 ? record.workHours.toFixed(2) : '-';
+                        }
+                        console.log(`工时已更新: ${date} -> ${record.workHours}小时`);
+                    }
+                }
+            } catch (error) {
+                console.error('刷新工时失败:', error);
+            }
         }
 
         // 清空某日数据
