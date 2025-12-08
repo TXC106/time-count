@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,9 +153,11 @@ public class WorkHoursCalculationService {
 
             // 计算工时
             if (startTime != null && endTime != null) {
-                double workHours = calculateDailyWorkHours(startTime, endTime, leaveStartTime, leaveEndTime);
+                // 检查下班时间是否为次日
+                boolean isEndTimeNextDay = isNextDay(endTimeStr);
+                double workHours = calculateDailyWorkHours(startTime, endTime, isEndTimeNextDay, leaveStartTime, leaveEndTime);
                 record.setWorkHours(workHours);
-                log.debug("日期 {} 计算工时: {} 小时", dateStr, workHours);
+                log.debug("日期 {} 计算工时: {} 小时{}", dateStr, workHours, isEndTimeNextDay ? "（跨天）" : "");
             } else {
                 log.debug("日期 {} 上下班时间不完整，跳过工时计算", dateStr);
             }
@@ -178,18 +179,28 @@ public class WorkHoursCalculationService {
      * 1. 下午请假（请假时间包含13:00-18:00）：不扣除用餐时间
      * 2. 19点前打下班卡：扣减1小时用餐时间（午餐）
      * 3. 19点及之后打下班卡：扣减1.5小时用餐时间（午餐+晚餐）
+     * 
+     * 跨天支持：
+     * - 如果下班时间标记为次日（+1），则加24小时计算
      */
-    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, 
+    private double calculateDailyWorkHours(LocalTime startTime, LocalTime endTime, boolean isEndTimeNextDay,
                                           LocalTime leaveStartTime, LocalTime leaveEndTime) {
         if (startTime == null || endTime == null) {
             return 0.0;
         }
 
         // 计算总工作时长（分钟）
-        long totalMinutes = Duration.between(startTime, endTime).toMinutes();
+        long totalMinutes;
+        if (isEndTimeNextDay) {
+            // 跨天：加24小时
+            totalMinutes = Duration.between(startTime, endTime).toMinutes() + 24 * 60;
+            log.debug("  跨天计算: {} -> {}(次日)", startTime, endTime);
+        } else {
+            totalMinutes = Duration.between(startTime, endTime).toMinutes();
+        }
         double totalHours = totalMinutes / 60.0;
         
-        log.debug("  原始时长: {} - {} = {} 小时", endTime, startTime, String.format("%.2f", totalHours));
+        log.debug("  原始时长: {} 小时", String.format("%.2f", totalHours));
 
         // 根据下班时间和请假情况判断用餐时间扣减
         LocalTime dinnerThreshold = LocalTime.of(config.getDinnerBreakThresholdHour(), 0); // 19:00
@@ -210,6 +221,13 @@ public class WorkHoursCalculationService {
         if (isAfternoonLeave) {
             // 下午请假，不扣除用餐时间
             log.debug("  下午请假，不扣除用餐时间");
+        } else if (isEndTimeNextDay) {
+            // 跨天班次，扣除夜宵时间（可以根据实际情况调整）
+            // 一般跨天工作会包含一次用餐，扣除1小时
+            mealTimeDeduction = 1.0;
+            totalHours -= mealTimeDeduction;
+            log.debug("  跨天班次，扣除用餐时间 {} 小时后: {} 小时", 
+                    mealTimeDeduction, String.format("%.2f", totalHours));
         } else if (endTime.isBefore(dinnerThreshold)) {
             // 19点前打下班卡，扣减1小时用餐时间
             mealTimeDeduction = 1.0;
@@ -322,6 +340,7 @@ public class WorkHoursCalculationService {
 
     /**
      * 解析时间字符串
+     * 支持格式：HH:mm 或 HH:mm+1（+1表示次日）
      */
     private LocalTime parseTime(String timeStr) {
         if (timeStr == null || timeStr.trim().isEmpty()) {
@@ -329,9 +348,12 @@ public class WorkHoursCalculationService {
         }
 
         try {
+            // 移除 +1 标记（次日标记），只解析时间部分
+            String cleanTimeStr = timeStr.replace("+1", "").trim();
+            
             // 支持格式：HH:mm 或 H:mm
-            if (timeStr.contains(":")) {
-                String[] parts = timeStr.split(":");
+            if (cleanTimeStr.contains(":")) {
+                String[] parts = cleanTimeStr.split(":");
                 int hour = Integer.parseInt(parts[0].trim());
                 int minute = Integer.parseInt(parts[1].trim());
                 return LocalTime.of(hour, minute);
@@ -341,6 +363,13 @@ public class WorkHoursCalculationService {
         }
 
         return null;
+    }
+    
+    /**
+     * 检查时间字符串是否包含次日标记
+     */
+    private boolean isNextDay(String timeStr) {
+        return timeStr != null && timeStr.contains("+1");
     }
 
     /**

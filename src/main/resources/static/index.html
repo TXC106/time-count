@@ -240,7 +240,7 @@
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">日期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">星期</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">上班时间</th>
-                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间</th>
+                                        <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">下班时间<span class="text-xs text-gray-500 ml-1">(次日加+1)</span></th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假开始时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">请假结束时间</th>
                                         <th class="px-4 py-3 border-b text-left text-sm font-semibold text-gray-700">工时</th>
@@ -662,10 +662,11 @@
                         </td>
                         <td class="px-4 py-3 border-b text-sm">
                             <input
-                                type="time"
+                                type="text"
                                 value="${record.endTime || ''}"
                                 onchange="updateAttendance('${record.date}', 'endTime', this.value, event)"
-                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+                                placeholder="HH:mm 或 HH:mm+1"
+                                class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-center"
                             >
                         </td>
                         <td class="px-4 py-3 border-b text-sm">

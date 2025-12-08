@@ -92,11 +92,21 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             下班时间
                         </label>
-                        <input 
-                            type="time" 
-                            id="attendanceEndTime" 
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
-                        >
+                        <div class="flex items-center gap-3">
+                            <input 
+                                type="time" 
+                                id="attendanceEndTime" 
+                                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-lg"
+                            >
+                            <label class="flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                                <input 
+                                    type="checkbox" 
+                                    id="endTimeNextDay" 
+                                    class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                                >
+                                <span class="text-sm font-medium text-gray-700">次日</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 
@@ -165,6 +175,15 @@
                         <strong>✓ 正常出勤：</strong>填写上班和下班时间即可
                     </p>
                 </div>
+                <div class="p-4 bg-purple-50 border-l-4 border-purple-400 rounded">
+                    <p class="text-purple-800">
+                        <strong>🌙 跨天打卡：</strong>
+                    </p>
+                    <ul class="mt-2 space-y-1 text-sm text-purple-700 ml-4">
+                        <li>• 如果下班时间是第二天，请勾选<strong>"次日"</strong>复选框</li>
+                        <li>• 例如：22:00上班，次日06:00下班（勾选"次日"）= 8小时</li>
+                    </ul>
+                </div>
                 <div class="p-4 bg-orange-50 border-l-4 border-orange-400 rounded">
                     <p class="text-orange-800">
                         <strong>🏖️ 请假说明：</strong>
@@ -215,7 +234,8 @@
         async function submitAttendance() {
             const date = document.getElementById('attendanceDate').value;
             const startTime = document.getElementById('attendanceStartTime').value;
-            const endTime = document.getElementById('attendanceEndTime').value;
+            let endTime = document.getElementById('attendanceEndTime').value;
+            const endTimeNextDay = document.getElementById('endTimeNextDay').checked;
             const leaveStartTime = document.getElementById('leaveStartTime').value;
             const leaveEndTime = document.getElementById('leaveEndTime').value;
             const remark = document.getElementById('attendanceRemark').value;
@@ -225,6 +245,11 @@
             if (!date) {
                 showMessage(resultDiv, '请选择日期', 'error');
                 return;
+            }
+
+            // 如果下班时间是次日，添加+1标记
+            if (endTime && endTimeNextDay) {
+                endTime = endTime + '+1';
             }
 
             btn.innerHTML = '<span class="loading"></span>';
@@ -254,6 +279,7 @@
                     // 清空表单
                     document.getElementById('attendanceStartTime').value = '';
                     document.getElementById('attendanceEndTime').value = '';
+                    document.getElementById('endTimeNextDay').checked = false;
                     document.getElementById('leaveStartTime').value = '';
                     document.getElementById('leaveEndTime').value = '';
                     document.getElementById('attendanceRemark').value = '';
