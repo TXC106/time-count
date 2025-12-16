@@ -160,7 +160,7 @@
         </div>
 
         <!-- Statistics Summary -->
-        <div id="summarySection" class="grid md:grid-cols-5 gap-4 mt-8 fade-in">
+        <div id="summarySection" class="grid md:grid-cols-3 lg:grid-cols-6 gap-4 mt-8 fade-in">
             <div class="bg-white rounded-xl shadow-lg p-6 border border-blue-100 hover:shadow-xl transition-all">
                 <div class="text-sm text-gray-600 mb-1">总工时</div>
                 <div id="summaryTotalHours" class="text-3xl font-bold text-blue-600">0</div>
@@ -199,6 +199,18 @@
                 <div class="text-sm text-gray-600 mb-1">平均工时</div>
                 <div id="summaryAvgHours" class="text-3xl font-bold text-purple-600">0</div>
                 <div class="text-sm text-gray-500">小时/天</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 relative group border border-red-100 hover:shadow-xl transition-all">
+                <div class="text-sm text-gray-600 mb-1 flex items-center gap-1">
+                    迟到天数
+                    <span class="text-xs text-red-500 cursor-help">ℹ️</span>
+                </div>
+                <div id="summaryLateDays" class="text-3xl font-bold text-red-600">0</div>
+                <div class="text-sm text-gray-500">天</div>
+                <div class="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 bottom-full left-1/2 transform -translate-x-1/2 mb-2 whitespace-nowrap z-10">
+                    迟到率: <span id="summaryLateRate">0.0</span>%
+                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                </div>
             </div>
         </div>
 
@@ -509,6 +521,23 @@
                 
                 const actualDaysEl = document.getElementById('summaryActualDays');
                 actualDaysEl.className = actualDays >= 21 ? 'text-3xl font-bold text-green-600' : 'text-3xl font-bold text-green-600';
+                
+                // 更新迟到统计
+                const lateDays = statistics.lateDays || 0;
+                const lateRate = actualDays > 0 ? ((lateDays / actualDays) * 100).toFixed(1) : '0.0';
+                
+                document.getElementById('summaryLateDays').textContent = lateDays;
+                document.getElementById('summaryLateRate').textContent = lateRate;
+                
+                // 根据迟到情况改变颜色
+                const lateDaysEl = document.getElementById('summaryLateDays');
+                if (lateDays === 0) {
+                    lateDaysEl.className = 'text-3xl font-bold text-green-600';
+                } else if (lateDays <= 2) {
+                    lateDaysEl.className = 'text-3xl font-bold text-yellow-600';
+                } else {
+                    lateDaysEl.className = 'text-3xl font-bold text-red-600';
+                }
             }
         }
 
