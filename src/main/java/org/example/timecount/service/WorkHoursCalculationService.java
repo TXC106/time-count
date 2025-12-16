@@ -315,6 +315,11 @@ public class WorkHoursCalculationService {
         List<DailyRecord> leaveRecords = new ArrayList<>();
         int lateNightCheckInCount = 0;
         int actualAttendanceDays = 0;
+        int lateDays = 0;
+        List<DailyRecord> lateRecords = new ArrayList<>();
+
+        // 获取标准上班时间
+        LocalTime standardStartTime = LocalTime.of(config.getStandardStartHour(), 0);
 
         for (DailyRecord record : dailyRecords) {
             if (record.getWorkHours() > 0) {
@@ -335,6 +340,89 @@ public class WorkHoursCalculationService {
             // 统计实际出勤天数（工作日且有上班或下班打卡记录）
             if (record.isWorkday() && (record.getStartTime() != null || record.getEndTime() != null)) {
                 actualAttendanceDays++;
+            }
+            
+            // 统计迟到天数（晚于标准上班时间打卡且打卡时间段未请假）
+            if (record.isWorkday() && 
+                record.getStartTime() != null && 
+                record.getStartTime().isAfter(standardStartTime)) {
+                
+                boolean isLate = false;
+                
+                // 根据请假类型判断打卡时间点是否在请假时间段内
+                switch (record.getLeaveType()) {
+                    case NONE:
+                        // 没有请假，算迟到
+                        isLate = true;
+                        break;
+                        
+                    case MORNING:
+                        // 上午请假（09:00-12:00）
+                        // 如果打卡时间在上午时段内（< 12:00），不算迟到（在请假时段内）
+                        // 如果打卡时间在下午（>= 13:00），下午标准上班时间是13:00，需要判断是否晚于13:00
+                        LocalTime morningEnd = LocalTime.of(12, 0);
+                        LocalTime afternoonStart = LocalTime.of(13, 0);
+                        
+                        if (record.getStartTime().isBefore(morningEnd)) {
+                            // 打卡在上午请假时段内，不算迟到
+                            isLate = false;
+                        } else if (record.getStartTime().isBefore(afternoonStart)) {
+                            // 打卡在午休时段（12:00-13:00），不算迟到
+                            isLate = false;
+                        } else {
+                            // 打卡在下午（>= 13:00），下午标准上班时间是13:00
+                            // 只要不晚于13:00就不算迟到
+                            LocalTime afternoonStandardStart = LocalTime.of(13, 0);
+                            isLate = record.getStartTime().isAfter(afternoonStandardStart);
+                        }
+                        break;
+                        
+                    case AFTERNOON:
+                        // 下午请假（13:00-18:00）
+                        // 如果打卡时间在下午时段内（>= 13:00），不算迟到（在请假时段内）
+                        // 如果打卡时间在上午（< 13:00），需要判断是否晚于上午标准上班时间09:00
+                        LocalTime afternoonStartTime = LocalTime.of(13, 0);
+                        
+                        if (record.getStartTime().isBefore(afternoonStartTime)) {
+                            // 打卡在上午，判断是否晚于上午标准上班时间
+                            isLate = record.getStartTime().isAfter(standardStartTime);
+                        } else {
+                            // 打卡在下午请假时段内，不算迟到
+                            isLate = false;
+                        }
+                        break;
+                        
+                    case FULL_DAY:
+                        // 全天请假，不算迟到
+                        isLate = false;
+                        break;
+                        
+                    case CUSTOM:
+                        // 自定义请假时间段，判断打卡时间是否在请假时间段内
+                        if (record.getLeaveStartTime() != null && record.getLeaveEndTime() != null) {
+                            // 如果打卡时间在请假时间段外，算迟到
+                            isLate = record.getStartTime().isBefore(record.getLeaveStartTime()) || 
+                                     record.getStartTime().isAfter(record.getLeaveEndTime());
+                        } else {
+                            // 自定义请假但没有设置时间段，当作没请假处理
+                            isLate = true;
+                        }
+                        break;
+                        
+                    default:
+                        isLate = true;
+                        break;
+                }
+                
+                if (isLate) {
+                    lateDays++;
+                    lateRecords.add(record);
+                    log.debug("检测到迟到: {} {} 打卡时间: {}, 请假类型: {}", 
+                            record.getDate(), record.getDayOfWeek(), record.getStartTime(), record.getLeaveType());
+                } else {
+                    log.debug("打卡时间 {} 在请假时间段内，不算迟到: {} {}", 
+                            record.getStartTime(), record.getDate(), record.getLeaveType());
+                }
             }
         }
 
@@ -368,6 +456,8 @@ public class WorkHoursCalculationService {
                 .leaveRecords(leaveRecords)
                 .lateNightCheckInCount(lateNightCheckInCount)
                 .actualAttendanceDays(actualAttendanceDays)
+                .lateDays(lateDays)
+                .lateRecords(lateRecords)
                 .build();
     }
 

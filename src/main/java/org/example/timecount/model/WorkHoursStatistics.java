@@ -82,4 +82,14 @@ public class WorkHoursStatistics {
      * 实际出勤天数（有打卡记录的工作日天数）
      */
     private int actualAttendanceDays;
+    
+    /**
+     * 迟到天数（晚于标准上班时间打卡且未请假）
+     */
+    private int lateDays;
+    
+    /**
+     * 迟到记录详情（仅包含迟到的记录）
+     */
+    private List<DailyRecord> lateRecords;
 }

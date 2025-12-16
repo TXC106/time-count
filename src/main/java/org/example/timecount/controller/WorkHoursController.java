@@ -13,6 +13,7 @@ import org.example.timecount.service.WorkHoursCalculationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -172,6 +173,38 @@ public class WorkHoursController {
                                 leaveTimeStr,
                                 workTimeStr,
                                 leaveRecord.getLeaveHours()));
+                    }
+                }
+                report.append("\n");
+            }
+
+            if (statistics.getLateDays() > 0) {
+                report.append("【迟到统计】\n");
+                report.append(String.format("  迟到天数：%d 天\n", statistics.getLateDays()));
+                report.append(String.format("  迟到率：%.1f%%\n", 
+                        statistics.getActualAttendanceDays() > 0 ? 
+                        (statistics.getLateDays() * 100.0 / statistics.getActualAttendanceDays()) : 0.0));
+                report.append(String.format("  标准上班时间：%02d:00\n\n", 
+                        workHoursConfig.getStandardStartHour()));
+                
+                // 显示迟到详情
+                report.append("  迟到明细：\n");
+                if (statistics.getLateRecords() != null && !statistics.getLateRecords().isEmpty()) {
+                    for (DailyRecord lateRecord : statistics.getLateRecords()) {
+                        // 计算迟到分钟数
+                        LocalTime standardStart = LocalTime.of(workHoursConfig.getStandardStartHour(), 0);
+                        long lateMinutes = java.time.Duration.between(standardStart, lateRecord.getStartTime()).toMinutes();
+                        
+                        String endTimeStr = lateRecord.getEndTime() != null ? 
+                                lateRecord.getEndTime().toString() : "未打卡";
+                        
+                        report.append(String.format("    - %s %s：上班 %s (迟到 %d 分钟), 下班 %s, 工时 %.2fh\n", 
+                                lateRecord.getDate(),
+                                lateRecord.getDayOfWeek(),
+                                lateRecord.getStartTime(),
+                                lateMinutes,
+                                endTimeStr,
+                                lateRecord.getWorkHours()));
                     }
                 }
                 report.append("\n");
